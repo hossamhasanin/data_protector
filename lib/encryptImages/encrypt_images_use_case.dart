@@ -1,55 +1,103 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:base/datasource/Database.dart';
 import 'package:base/datasource/DatabaseImbl.dart';
 import 'package:base/datasource/File.dart' as F;
+import 'package:base/datasource/network/AuthDataSource.dart';
 import 'package:base/encrypt/encryption.dart';
-import 'package:data_protector/encryptImages/image_file_wrapper.dart';
+import 'package:data_protector/encryptImages/wrappers/GetImagesStreamWrapper.dart';
+import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:base/Constants.dart';
 
-class UseCase {
-  DatabaseImble dataScource;
-  EncryptImple encrypting;
-  UseCase({this.dataScource , this.encrypting});
-  Future<List<ImageFileWrapper>> getAllImages() async {
-    List<ImageFileWrapper> files = (await dataScource.getFiles()).map((val) {
-       var encImageFile = new File(val.path).readAsBytesSync();
-       var decImageFile = encrypting.decrypt(encImageFile);
-       ImageFileWrapper image = ImageFileWrapper(imageFile: val , uint8list: decImageFile);
-       return image;
-    }).toList();
-    return files;
+class EnnryptImagesUseCase {
+  Database dataScource;
+  AuthDataSource authDataSource;
+  Encrypt encrypting;
+  EnnryptImagesUseCase(
+      {this.dataScource, this.encrypting, this.authDataSource});
+
+  // Future<List<ImageFileWrapper>> getAllImages() async {
+  //   await dataScource.initDatabase();
+  //   List<ImageFileWrapper> files = (await dataScource.getFiles()).map((val) {
+  //      var encImageFile = new File(val.path).readAsBytesSync();
+  //      var decImageFile = encrypting.decrypt(encImageFile);
+  //      ImageFileWrapper image = ImageFileWrapper(imageFile: val , uint8list: decImageFile);
+  //      return image;
+  //   }).toList();
+  //   return files;
+  // }
+
+  Stream<GetImagesStreamWrapper> getAllImages() async* {
+    await dataScource.initDatabase();
+    String key = await _getEncKey();
+    List<ImageFileWrapper> readyToLoad = [];
+    var files = await dataScource.getFiles();
+    var c = 0;
+    if (files.isNotEmpty) {
+      for (var i = 0; i <= files.length - 1; i++) {
+        var file = files[i];
+        var encImageFile = new File(file.path).readAsBytesSync();
+        var decImageFile = encrypting.decrypt(encImageFile, key);
+        ImageFileWrapper image =
+            ImageFileWrapper(imageFile: file, uint8list: decImageFile);
+
+        readyToLoad.add(image);
+        //yield image;
+        if (readyToLoad.length == IMAGES_PER_PROCESS || i == files.length - 1) {
+          c += 1;
+          GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
+              images: readyToLoad, done: false, empty: false);
+          yield imagesStreamWrapper;
+          readyToLoad.clear();
+          print("koko count > " + c.toString());
+        }
+      }
+      GetImagesStreamWrapper imagesStreamWrapper =
+          GetImagesStreamWrapper(images: null, done: true, empty: false);
+      yield imagesStreamWrapper;
+    } else {
+      GetImagesStreamWrapper imagesStreamWrapper =
+          GetImagesStreamWrapper(images: [], done: false, empty: true);
+      yield imagesStreamWrapper;
+    }
   }
 
-  Future<Exception> encryptImages(List<Uint8List> images){
+  Future<String> _getEncKey() {
+    return authDataSource.getEncryptionKey();
+  }
+
+  Future<Exception> encryptImages(List<Uint8List> images) async {
+    String key = await _getEncKey();
     List<F.File> files = [];
-    images.forEach((image) async {
+    for (var image in images) {
       var dir = await getExternalStorageDirectory();
-      var testdir = await new Directory('${dir.path}/protected').create(recursive: true);
+      var testdir =
+          await new Directory('${dir.path}/protected').create(recursive: true);
       print(testdir.path);
       var dateTime = DateTime.now().toUtc().toIso8601String();
       var fileName = "$dateTime.hg";
       var filePath = "${testdir.path}/$fileName";
-      var file = F.File(name: fileName , id: dateTime , path: filePath);
+      var file = F.File(name: fileName, id: dateTime, path: filePath);
       files.add(file);
 
-      var encrypted = encrypting.encrypt(image);
+      var encrypted = encrypting.encrypt(image, key);
 
-      await _saveImage(encrypted.bytes , filePath);
-    });
-    dataScource.addFiles(files);
+      await _saveImage(encrypted.bytes, filePath);
+    }
+    print("koko > save files " + files.length.toString());
+    await dataScource.addFiles(files);
   }
 
-  Future<File> _saveImage(Uint8List image , String fileName) async {
+  Future<File> _saveImage(Uint8List image, String fileName) async {
     var permission = Permission.storage;
-    if (await permission.status.isGranted){
-
+    if (await permission.status.isGranted) {
       return new File(fileName)..writeAsBytesSync(image);
     } else {
       await permission.request();
-      return _saveImage(image , fileName);
+      return _saveImage(image, fileName);
     }
   }
-
 }

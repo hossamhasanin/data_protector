@@ -1,0 +1,26 @@
+import 'package:base/datasource/network/AuthDataSource.dart';
+import 'package:base/encrypt/Encrypt.dart';
+import 'package:base/models/user.dart';
+
+class AuthUseCase {
+  AuthDataSource _authDataSource;
+  Encrypt _encrypt;
+  AuthUseCase({AuthDataSource authDataSource, Encrypt encrypt})
+      : _encrypt = encrypt,
+        _authDataSource = authDataSource;
+
+  Future<void> login(String email, String password) {
+    return _authDataSource.login(email, password);
+  }
+
+  Future<void> signup(String username, String email, String password) async {
+    await _authDataSource.signup(username, email, password);
+    final user = User(name: username, email: email);
+    return _authDataSource.createUserInDatabase(user);
+  }
+
+  Future<void> setSettings(String key) {
+    String hashedKey = _encrypt.hash(key);
+    return _authDataSource.setEncryptionKey(hashedKey);
+  }
+}

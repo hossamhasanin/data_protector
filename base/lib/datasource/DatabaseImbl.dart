@@ -3,7 +3,7 @@ import 'package:base/datasource/File.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 class DatabaseImble implements Database{
-  var filesBox = Hive.box<File>("filesBox");
+  Box<File> filesBox;
 
   @override
   Future<List<File>> getFiles() {
@@ -12,9 +12,11 @@ class DatabaseImble implements Database{
 
   @override
   void initDatabase() async {
-    await Hive.initFlutter();
-    Hive.registerAdapter(FileAdapter());
-    Hive.openBox<File>("filesBox");
+    if (!Hive.isAdapterRegistered(0)) {
+      await Hive.initFlutter();
+      Hive.registerAdapter(FileAdapter());
+      filesBox = await Hive.openBox<File>("filesBox");
+    }
   }
 
   @override
