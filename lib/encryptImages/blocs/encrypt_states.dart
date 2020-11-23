@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:data_protector/encryptImages/image_file_wrapper.dart';
+import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
 import 'package:equatable/equatable.dart';
 
 class EncryptState extends Equatable {
@@ -19,6 +19,8 @@ class EncryptFailed extends EncryptState{
   // TODO: implement props
   List<Object> get props => [error];
 }
+
+class GettingImages extends EncryptState{}
 
 class GotImages extends EncryptState{
   List<ImageFileWrapper> images;

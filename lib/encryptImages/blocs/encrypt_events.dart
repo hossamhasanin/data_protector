@@ -1,6 +1,7 @@
 
 import 'dart:typed_data';
 
+import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
 import 'package:equatable/equatable.dart';
 
 class EncryptEvent extends Equatable {
@@ -21,4 +22,14 @@ class PickingImagesError extends EncryptEvent{
   PickingImagesError({this.error});
   @override
   List<Object> get props => [error];
+}
+
+class GotImagesEvent extends EncryptEvent{
+  List<ImageFileWrapper> images;
+
+  GotImagesEvent({this.images});
+
+  @override
+  // TODO: implement props
+  List<Object> get props => [images];
 }
