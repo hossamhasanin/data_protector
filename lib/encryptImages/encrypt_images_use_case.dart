@@ -11,6 +11,7 @@ import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:base/Constants.dart';
+import 'package:photo_manager/photo_manager.dart';
 
 class EnnryptImagesUseCase {
   Database dataScource;
@@ -124,6 +125,7 @@ class EnnryptImagesUseCase {
     try{
       for (ImageFileWrapper image in images){
         await _saveImage(image.uint8list, "$decryptedImagesPath/${image.imageFile.name}");
+        await PhotoManager.editor.saveImage(image.uint8list , title: image.imageFile.name);
         await dataScource.deleteFile(image.imageFile);
         await _deleteFile(image.imageFile.path);
       }
