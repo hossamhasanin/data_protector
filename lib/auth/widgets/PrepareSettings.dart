@@ -2,6 +2,7 @@ import 'package:data_protector/auth/blocs/auth_bloc.dart';
 import 'package:data_protector/auth/blocs/auth_events.dart';
 import 'package:data_protector/auth/blocs/auth_states.dart';
 import 'package:data_protector/encryptImages/widgets/show_encrypted_images_widget.dart';
+import 'package:data_protector/ui/UiHelpers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -19,23 +20,20 @@ class _PrepareSettingsState extends State<PrepareSettings> {
   void initState() {
     super.initState();
     key = TextEditingController();
-
-    _authBloc.authState.listen((state) {
-      if (state is AddingSettings) {
-        Get.dialog(
-            Center(
-              child: CircularProgressIndicator(),
-            ),
-            barrierDismissible: false);
-      } else if (state is AddedSettings) {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (_) => EncryptedImagesWidget()));
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
+    _authBloc.authState.listen((state) {
+      if (state is AddingSettings) {
+        showCustomDialog(context: context ,title: "Wait a bit !" , children: [CircularProgressIndicator()] );
+      } else if (state is AddedSettings) {
+        Navigator.push(context,
+            MaterialPageRoute(builder: (_) => EncryptedImagesWidget()));
+      } else if (state is AddSettingsError){
+        showCustomDialog(context: context ,title: "Error bro !" , children: [Text(state.error)]);
+      }
+    });
     return Scaffold(
       body: Container(
           padding: EdgeInsets.only(top: 50.0),

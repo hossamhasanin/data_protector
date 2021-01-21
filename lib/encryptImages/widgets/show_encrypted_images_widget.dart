@@ -33,39 +33,51 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Protect your data"),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: loadAssets,
-        child: Icon(Icons.add , color: Colors.white,),
-        backgroundColor: Colors.blue,
-      ),
-      body: BlocProvider(
-        create: (_)=> bloc,
-        child: BlocBuilder<EncryptImagesBloc , EncryptState>(
-          builder: (context , state){
-            if (state is GotImages){
-              if (state.images.isNotEmpty){
-                return buildGridView(state);
-              } else {
+    return Obx( () => Scaffold(
+        appBar: AppBar(
+          title: Text("Protect your data"),
+          automaticallyImplyLeading: false,
+          actions: bloc.isSelecting.value ? [
+            IconButton(icon: Icon(Icons.lock_open), onPressed: (){
+              // decrypt the selected images
+              bloc.add(DecryptImages());
+            }) ,
+            IconButton(icon: Icon(Icons.close), onPressed: (){
+              bloc.isSelecting.value = false;
+              bloc.selectedImages.value = List();
+            })
+          ] : [],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: loadAssets,
+          child: Icon(Icons.add , color: Colors.white,),
+          backgroundColor: Colors.blue,
+        ),
+        body: BlocProvider(
+          create: (_)=> bloc,
+          child: BlocBuilder<EncryptImagesBloc , EncryptState>(
+            builder: (context , state){
+              if (state is GotImages){
+                if (state.images.isNotEmpty){
+                  return buildGridView(state);
+                } else {
+                  return Center(
+                    child: Text("No Encrypted Images Yet ."),
+                  );
+                }
+              } else if (state is GettingImagesFailed){
                 return Center(
-                  child: Text("No Encrypted Images Yet ."),
+                  child: Text(state.error),
                 );
+              } else if (state is GettingImages){
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
+              } else {
+                return Container();
               }
-            } else if (state is GettingImagesFailed){
-              return Center(
-                child: Text(state.error),
-              );
-            } else if (state is GettingImages){
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            } else {
-              return Container();
-            }
-          },
+            },
+          ),
         ),
       ),
     );
@@ -89,19 +101,41 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget> {
   }
 
   Widget buildImageCard(ImageFileWrapper image){
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-            image: MemoryImage(image.uint8list),
-            fit: BoxFit.cover
+    return GestureDetector(
+      onLongPress: !bloc.isSelecting.value ? (){
+        bloc.isSelecting.value = true;
+        bloc.selectedImages.add(image);
+      }: null,
+      onTap: bloc.isSelecting.value ? (){
+        if (!bloc.selectedImages.contains(image)){
+          bloc.selectedImages.add(image);
+        } else {
+          bloc.selectedImages.remove(image);
+          if (bloc.selectedImages.isEmpty){
+            bloc.isSelecting.value = false;
+          }
+        }
+      }: null,
+      child: Obx(
+        ()=> Container(
+          color: bloc.selectedImages.contains(image) ? Colors.grey: null,
+          padding: bloc.selectedImages.contains(image) ? EdgeInsets.all(5.0) : null,
+          child: Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                  image: MemoryImage(image.uint8list),
+                  fit: BoxFit.cover
+              ),
+              borderRadius: BorderRadius.circular(30.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey,
+                  blurRadius: 5.0
+                )
+              ]
+            ),
+          ),
         ),
-        borderRadius: BorderRadius.circular(30.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey,
-            blurRadius: 5.0
-          )
-        ]
       ),
     );
   }

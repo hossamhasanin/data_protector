@@ -14,13 +14,16 @@ class AuthUseCase {
   }
 
   Future<void> signup(String username, String email, String password) async {
-    await _authDataSource.signup(username, email, password);
-    final user = User(name: username, email: email);
+    final userId = await _authDataSource.signup(username, email, password);
+    final user = User(id: userId , name: username, email: email);
     return _authDataSource.createUserInDatabase(user);
   }
 
   Future<void> setSettings(String key) {
     String hashedKey = _encrypt.hash(key);
     return _authDataSource.setEncryptionKey(hashedKey);
+  }
+  bool isLoggedIn(){
+    return _authDataSource.isLogedIn();
   }
 }

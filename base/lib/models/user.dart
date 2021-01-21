@@ -11,7 +11,7 @@ class User extends Equatable {
   @override
   List<Object> get props => [id, email, encryptionKey, name];
 
-  Map toDocument() {
+  Map<String , dynamic> toDocument() {
     return {
       "id": this.id,
       "name": this.name,

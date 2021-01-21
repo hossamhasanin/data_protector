@@ -20,6 +20,22 @@ class EncryptFailed extends EncryptState{
   List<Object> get props => [error];
 }
 
+class DecryptState extends Equatable {
+  @override
+  // TODO: implement props
+  List<Object> get props => [];
+}
+
+class DecryptDone extends DecryptState{}
+class Decrypting extends DecryptState{}
+class DecryptFailed extends DecryptState{
+  String error;
+  DecryptFailed({this.error});
+  @override
+  // TODO: implement props
+  List<Object> get props => [error];
+}
+
 class GettingImages extends EncryptState{}
 
 class GotImages extends EncryptState{

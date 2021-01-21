@@ -17,6 +17,9 @@ class EncryptImages extends EncryptEvent{
   List<Object> get props => [images];
 }
 
+class DecryptImages extends EncryptEvent{
+}
+
 class PickingImagesError extends EncryptEvent{
   String error;
   PickingImagesError({this.error});

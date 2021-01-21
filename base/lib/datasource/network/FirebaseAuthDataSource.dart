@@ -14,9 +14,10 @@ class FirebaseAuthDataSource implements AuthDataSource {
   }
 
   @override
-  Future<void> signup(String username, String email, String password) {
-    return _auth.createUserWithEmailAndPassword(
+  Future<String> signup(String username, String email, String password) async{
+    var signup = await _auth.createUserWithEmailAndPassword(
         email: email, password: password);
+    return Future.value(signup.user.uid);
   }
 
   @override
@@ -50,5 +51,10 @@ class FirebaseAuthDataSource implements AuthDataSource {
         .doc(_auth.currentUser.uid)
         .get();
     return Future.value(user.data()["encryptionKey"]);
+  }
+
+  @override
+  bool isLogedIn() {
+    return _auth.currentUser != null;
   }
 }

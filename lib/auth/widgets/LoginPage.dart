@@ -1,7 +1,9 @@
 import 'package:data_protector/auth/blocs/auth_bloc.dart';
 import 'package:data_protector/auth/blocs/auth_events.dart';
 import 'package:data_protector/auth/blocs/auth_states.dart';
+import 'package:data_protector/auth/widgets/SignupPage.dart';
 import 'package:data_protector/encryptImages/widgets/show_encrypted_images_widget.dart';
+import 'package:data_protector/ui/UiHelpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
@@ -41,19 +43,6 @@ class _LoginPageState extends State<LoginPage>
     muchDelayedAnimation = Tween(begin: -1.0, end: 0.0).animate(CurvedAnimation(
         curve: Interval(0.8, 1.0, curve: Curves.fastOutSlowIn),
         parent: animationController));
-
-    _authBloc.authState.listen((state) {
-      if (state is Authenticating) {
-        Get.dialog(
-            Center(
-              child: CircularProgressIndicator(),
-            ),
-            barrierDismissible: false);
-      } else if (state is LoggedIn) {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (_) => EncryptedImagesWidget()));
-      }
-    });
   }
 
   @override
@@ -64,8 +53,22 @@ class _LoginPageState extends State<LoginPage>
 
   @override
   Widget build(BuildContext context) {
-    animationController.forward();
 
+    _authBloc.authState.listen((state) {
+      print("koko > "+ state.toString());
+      if (state is Authenticating) {
+        Get.snackbar("auth", "Authenticating");
+      } else if (state is LoggedIn) {
+        Navigator.push(context,
+            MaterialPageRoute(builder: (_) => EncryptedImagesWidget()));
+      } else if (state is AuthError){
+        showCustomDialog(context: context ,title: "Error bro !" , children: [Text(state.error)]);
+      }
+    });
+
+    _authBloc.isLoggedIn();
+
+    animationController.forward();
     return AnimatedBuilder(
         animation: animationController,
         builder: (BuildContext context, Widget child) {
@@ -149,24 +152,24 @@ class _LoginPageState extends State<LoginPage>
                   obscureText: true,
                 ),
                 SizedBox(height: 5.0),
-                Obx(() {
-                  final state = _authBloc.authState.value;
-                  if (state is AuthError) {
-                    AuthError errorState = state;
-                    return Container(
-                      decoration: BoxDecoration(
-                          color: Colors.redAccent[100],
-                          borderRadius: BorderRadius.circular(15.0)),
-                      padding: EdgeInsets.all(20.0),
-                      child: Center(
-                          child: Column(
-                        children: [Expanded(child: Text(errorState.error))],
-                      )),
-                    );
-                  } else {
-                    return Container();
-                  }
-                }),
+                // Obx(() {
+                //   final state = _authBloc.authState.value;
+                //   if (state is AuthError) {
+                //     AuthError errorState = state;
+                //     return Container(
+                //       decoration: BoxDecoration(
+                //           color: Colors.redAccent[100],
+                //           borderRadius: BorderRadius.circular(15.0)),
+                //       padding: EdgeInsets.all(20.0),
+                //       child: Center(
+                //           child: Column(
+                //         children: [Expanded(child: Text(errorState.error))],
+                //       )),
+                //     );
+                //   } else {
+                //     return Container();
+                //   }
+                // }),
                 SizedBox(height: 5.0),
                 Container(
                   alignment: Alignment(1.0, 0),
@@ -222,9 +225,9 @@ class _LoginPageState extends State<LoginPage>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Center(
-                          child: ImageIcon(AssetImage("assets/facebook.png")),
-                        ),
+                        // Center(
+                        //   child: ImageIcon(AssetImage("assets/facebook.png")),
+                        // ),
                         SizedBox(width: 10.0),
                         Center(
                           child: Text(
@@ -256,7 +259,7 @@ class _LoginPageState extends State<LoginPage>
               SizedBox(width: 5.0),
               InkWell(
                 onTap: () {
-                  Navigator.of(context).pushNamed("/signup");
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => SignupPage()));
                 },
                 child: Text(
                   "Register",

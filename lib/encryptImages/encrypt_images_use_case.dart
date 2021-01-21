@@ -39,21 +39,27 @@ class EnnryptImagesUseCase {
     if (files.isNotEmpty) {
       for (var i = 0; i <= files.length - 1; i++) {
         var file = files[i];
-        var encImageFile = new File(file.path).readAsBytesSync();
-        var decImageFile = encrypting.decrypt(encImageFile, key);
-        ImageFileWrapper image =
-            ImageFileWrapper(imageFile: file, uint8list: decImageFile);
 
-        readyToLoad.add(image);
-        //yield image;
-        if (readyToLoad.length == IMAGES_PER_PROCESS || i == files.length - 1) {
-          c += 1;
-          GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
-              images: readyToLoad, done: false, empty: false);
-          yield imagesStreamWrapper;
-          readyToLoad.clear();
-          print("koko count > " + c.toString());
+        try{
+          var encImageFile = new File(file.path).readAsBytesSync();
+          var decImageFile = encrypting.decrypt(encImageFile, key);
+          ImageFileWrapper image =
+          ImageFileWrapper(imageFile: file, uint8list: decImageFile);
+
+          readyToLoad.add(image);
+          //yield image;
+          if (readyToLoad.length == IMAGES_PER_PROCESS || i == files.length - 1) {
+            c += 1;
+            GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
+                images: readyToLoad, done: false, empty: false);
+            yield imagesStreamWrapper;
+            readyToLoad.clear();
+            print("koko count > " + c.toString());
+          }
+        } catch(e){
+          dataScource.deleteFile(file);
         }
+
       }
       GetImagesStreamWrapper imagesStreamWrapper =
           GetImagesStreamWrapper(images: null, done: true, empty: false);
@@ -98,6 +104,31 @@ class EnnryptImagesUseCase {
     } else {
       await permission.request();
       return _saveImage(image, fileName);
+    }
+  }
+
+  Future<File> _deleteFile(String fileName) async {
+    var permission = Permission.storage;
+    if (await permission.status.isGranted) {
+      return new File(fileName)..delete();
+    } else {
+      await permission.request();
+      return _deleteFile(fileName);
+    }
+  }
+
+  Future decryptImages(List<ImageFileWrapper> images) async {
+    var dir = await getExternalStorageDirectory();
+    var decryptedImagesPath =
+    await new Directory('${dir.path}/decrypted').create(recursive: true);
+    try{
+      for (ImageFileWrapper image in images){
+        await _saveImage(image.uint8list, "$decryptedImagesPath/${image.imageFile.name}");
+        await dataScource.deleteFile(image.imageFile);
+        await _deleteFile(image.imageFile.path);
+      }
+    }catch(e){
+      return Future.error(e);
     }
   }
 }

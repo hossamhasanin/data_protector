@@ -1,16 +1,23 @@
 import 'dart:async';
 
+import 'package:base/datasource/File.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_events.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_states.dart';
 import 'package:data_protector/encryptImages/encrypt_images_use_case.dart';
 import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 
 class EncryptImagesBloc extends Bloc<EncryptEvent , EncryptState>{
 
   EnnryptImagesUseCase useCase;
 
   StreamSubscription _imagesListener;
+
+  RxBool isSelecting = false.obs;
+
+  RxList<ImageFileWrapper> selectedImages = List<ImageFileWrapper>().obs;
+  Rx<DecryptState> decryptState = DecryptState().obs;
 
   EncryptImagesBloc({this.useCase}) : super(InitEncryptState());
 
@@ -22,6 +29,8 @@ class EncryptImagesBloc extends Bloc<EncryptEvent , EncryptState>{
       yield* getAllImages();
     } else if (event is GotImagesEvent){
       yield GotImages(images: event.images);
+    }else if (event is DecryptImages){
+      yield decryptImages();
     }
   }
 
@@ -63,6 +72,16 @@ class EncryptImagesBloc extends Bloc<EncryptEvent , EncryptState>{
       add(GetAllImages());
     } catch (e){
       yield EncryptFailed(error: e.toString());
+    }
+  }
+
+  decryptImages() async {
+    decryptState.value = Decrypting();
+    try{
+      await useCase.decryptImages(selectedImages);
+      decryptState.value = DecryptDone();
+    }catch(e){
+      decryptState.value = DecryptFailed(error: e);
     }
   }
 

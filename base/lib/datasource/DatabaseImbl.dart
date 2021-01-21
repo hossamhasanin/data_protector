@@ -34,4 +34,9 @@ class DatabaseImble implements Database{
     return filesBox.addAll(files);
   }
 
+  @override
+  Future<void> deleteAllFiles(List<File> files) {
+    return filesBox.deleteAll(files);
+  }
+
 }

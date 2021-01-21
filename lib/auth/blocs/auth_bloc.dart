@@ -8,7 +8,7 @@ import 'package:get/get_rx/get_rx.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthUseCase _authUseCase;
-  Rx<AuthState> authState = InitAuth().obs;
+  Rx<AuthState> authState = AuthState().obs;
 
   AuthBloc({AuthUseCase authUseCase})
       : _authUseCase = authUseCase,
@@ -16,9 +16,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   @override
   Stream<AuthState> mapEventToState(AuthEvent event) async* {
+    print("koko > " + event.props.toString());
     if (event is Login) {
       yield* login(event);
     } else if (event is Signup) {
+      print("koko > signup");
       yield* signup(event);
     } else if (event is SetSettings) {
       yield* setSettings(event);
@@ -26,32 +28,42 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Stream<AuthState> login(Login event) async* {
-    authState = Authenticating().obs;
+    authState.value = Authenticating();
     try {
       await _authUseCase.login(event.email, event.password);
-      authState = LoggedIn().obs;
+      authState.value = LoggedIn();
     } catch (e) {
-      authState = AuthError(error: e.toString()).obs;
+      authState.value = AuthError(error: e.toString());
     }
   }
 
   Stream<AuthState> signup(Signup event) async* {
-    authState = Authenticating().obs;
+    authState.value = Authenticating();
     try {
       await _authUseCase.signup(event.username, event.email, event.password);
-      authState = SignedUp().obs;
+      authState.value = SignedUp();
+      print("koko > "+authState.value.toString());
     } catch (e) {
-      authState = AuthError(error: e.toString()).obs;
+      authState.value = AuthError(error: e.toString());
     }
   }
 
   Stream<AuthState> setSettings(SetSettings event) async* {
-    authState = AddingSettings().obs;
+    authState.value = AddingSettings();
     try {
       await _authUseCase.setSettings(event.key);
-      authState = AddedSettings().obs;
+    authState.value = AddedSettings();
     } catch (e) {
-      authState = AddSettingsError(error: e.toString()).obs;
+      authState.value = AddSettingsError(error: e.toString());
+    }
+  }
+
+  isLoggedIn(){
+    if (_authUseCase.isLoggedIn()){
+      authState.value = LoggedIn();
+      print("koko logged in");
+    } else {
+      print("koko not logged in ");
     }
   }
 
