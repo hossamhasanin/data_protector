@@ -6,8 +6,12 @@ class DatabaseImble implements Database{
   Box<File> filesBox;
 
   @override
-  Future<List<File>> getFiles() {
-    return Future.value(filesBox.values.toList());
+  Future<List<File>> getFiles(String path) {
+    var list = filesBox.values.where((file) => file.path == path).toList();
+    list.sort((p , n) {
+      return p.type.compareTo(n.type);
+    });
+    return Future.value(list);
   }
 
   @override

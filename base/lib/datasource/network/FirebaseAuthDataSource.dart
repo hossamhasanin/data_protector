@@ -57,4 +57,9 @@ class FirebaseAuthDataSource implements AuthDataSource {
   bool isLogedIn() {
     return _auth.currentUser != null;
   }
+
+  @override
+  Future<void> logOut() {
+    return _auth.signOut();
+  }
 }

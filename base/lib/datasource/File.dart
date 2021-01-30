@@ -13,6 +13,9 @@ class File{
   @HiveField(2)
   String path;
 
-  File({this.name , this.id , this.path});
+  @HiveField(3)
+  int type;
+
+  File({this.name , this.id , this.path , this.type});
 
 }
