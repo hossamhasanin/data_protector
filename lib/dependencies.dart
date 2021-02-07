@@ -26,6 +26,6 @@ void injection() {
   Get.put(AuthUseCase(authDataSource: Get.find(), encrypt: Get.find()));
 
   // blocs
-  Get.put(EncryptImagesBloc(useCase: Get.find()));
-  Get.put(AuthBloc(authUseCase: Get.find()));
+  // Get.put(EncryptImagesBloc(useCase: Get.find()));
+  // Get.put(AuthBloc(authUseCase: Get.find()));
 }

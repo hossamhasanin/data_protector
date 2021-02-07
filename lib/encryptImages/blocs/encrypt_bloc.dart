@@ -7,30 +7,46 @@ import 'package:data_protector/encryptImages/encrypt_images_use_case.dart';
 import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
 
-class EncryptImagesBloc extends Bloc<EncryptEvent , EncryptState>{
-
+class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
   EnnryptImagesUseCase useCase;
 
   StreamSubscription _imagesListener;
 
-  RxBool isSelecting = false.obs;
+  RxBool isImageSelecting = false.obs;
 
-  RxList<ImageFileWrapper> selectedImages = List<ImageFileWrapper>().obs;
+  RxBool isFolderSelecting = false.obs;
+
+  RxString dir = "/".obs;
+
+  RxList<FileWrapper> selectedImages = List<FileWrapper>().obs;
+
+  RxList<FileWrapper> selectedFolder = List<FileWrapper>().obs;
+
   Rx<DecryptState> decryptState = DecryptState().obs;
+  Rx<DeleteFolderState> deletefolderState = DeleteFolderState().obs;
+  Rx<CreateNewFolderState> createNewFolderState = CreateNewFolderState().obs;
+  Rx<SignOutState> signOutState = SignOutState().obs;
 
   EncryptImagesBloc({this.useCase}) : super(InitEncryptState());
 
   @override
   Stream<EncryptState> mapEventToState(EncryptEvent event) async* {
-    if (event is EncryptImages){
-      yield* encryptImages(event);
-    } else if (event is GetAllImages){
-      yield* getAllImages();
-    } else if (event is GotImagesEvent){
+    if (event is EncryptImages) {
+      yield* _encryptImages(event);
+    } else if (event is GetStoredFiles) {
+      yield* _getFiles(event);
+    } else if (event is GotImagesEvent) {
       yield GotImages(images: event.images);
-    }else if (event is DecryptImages){
-      yield decryptImages();
+    } else if (event is DecryptImages) {
+      yield* _decryptImages();
+    } else if (event is CreateNewFolder) {
+      yield* _createNewFolder(event);
+    } else if (event is DeleteFolders) {
+      yield* _deleteFolders(event);
+    } else if (event is LogOut) {
+      yield* _logOut();
     }
   }
 
@@ -42,49 +58,108 @@ class EncryptImagesBloc extends Bloc<EncryptEvent , EncryptState>{
   //   yield GotImages(images: images);
   // }
 
-  Stream<EncryptState> getAllImages() async* {
+  Stream<EncryptState> _getFiles(GetStoredFiles event) async* {
     print("koko > load images");
-    if (_imagesListener != null){
+    if (_imagesListener != null) {
       _imagesListener.cancel();
     } else {
       yield GettingImages();
     }
-    List<ImageFileWrapper> allImages = [];
-    if (state is GotImages){
+    List<FileWrapper> allImages = [];
+    if (state is GotImages && !event.clearTheList) {
       allImages.addAll((state as GotImages).images);
     }
-    _imagesListener = useCase.getAllImages().listen((imagesWrapper) {
-      if (imagesWrapper.images != null || imagesWrapper.empty){
-        print("koko >" + imagesWrapper.images.length.toString());
-        allImages.addAll(imagesWrapper.images);
-        add(GotImagesEvent(images: allImages));
-      } else if (imagesWrapper.done){
+    var dir = await getExternalStorageDirectory();
+    var path = event.path == "/" ? "${dir.path}" : event.path;
+    print("koko path is > $path");
+    if (event.path != "/") {
+      this.dir.value = event.path;
+    }
+    _imagesListener = useCase.getAllImages(path: path).listen((filesWrapper) {
+      if (filesWrapper.images != null || filesWrapper.empty) {
+        print("koko >" + filesWrapper.images.length.toString());
+        allImages.addAll(filesWrapper.images);
+      } else if (filesWrapper.done) {
         _imagesListener.cancel();
         _imagesListener = null;
         print("koko > done");
       }
+
+      if (filesWrapper.error != null) {
+        Get.snackbar("Error !", filesWrapper.error.toString());
+      }
+
+      add(GotImagesEvent(images: allImages));
     });
   }
 
-  Stream<EncryptState> encryptImages(EncryptImages event) async* {
-    try{
-      await useCase.encryptImages(event.images);
-      add(GetAllImages());
-    } catch (e){
-      yield EncryptFailed(error: e.toString());
+  Stream<EncryptState> _createNewFolder(CreateNewFolder event) async* {
+    createNewFolderState.value = CreatingNewFolder();
+    try {
+      var mainDir = await getExternalStorageDirectory();
+      var path = dir.value == "/" ? "${mainDir.path}" : dir.value;
+      await useCase.createNewFolder(event.name, path);
+      createNewFolderState.value = CreateNewFolderDone();
+      add(GetStoredFiles(path: dir.value, clearTheList: true));
+    } catch (e) {
+      createNewFolderState.value = CreateNewFolderFailed(error: e.toString());
+      print(e.toString());
     }
   }
 
-  decryptImages() async {
+  Stream<EncryptState> _encryptImages(EncryptImages event) async* {
+    try {
+      var mainDir = await getExternalStorageDirectory();
+      var path = dir.value == "/" ? "${mainDir.path}" : dir.value;
+      print("koko > enc path $path");
+      await useCase.encryptImages(event.images, path);
+      add(GetStoredFiles(path: dir.value, clearTheList: true));
+    } catch (e) {
+      yield EncryptFailed(error: e.toString());
+      print("koko > enc error : " + e.toString());
+    }
+  }
+
+  Stream<EncryptState> _decryptImages() async* {
     decryptState.value = Decrypting();
-    try{
+    try {
       await useCase.decryptImages(selectedImages);
       decryptState.value = DecryptDone();
-    }catch(e){
-      decryptState.value = DecryptFailed(error: e);
+      add(GetStoredFiles(path: dir.value, clearTheList: true));
+    } catch (e) {
+      decryptState.value = DecryptFailed(error: e.toString());
+      print(e.toString());
     }
   }
 
+  Stream<EncryptState> _deleteFolders(DeleteFolders event) async* {
+    deletefolderState.value = DeletingFolder();
+    try {
+      print("koko > will delete folder ${event.folders.length}");
+      await useCase.deleteFolders(event.folders);
+      deletefolderState.value = DeleteFolderDone();
+      add(GetStoredFiles(path: dir.value, clearTheList: true));
+    } catch (e) {
+      deletefolderState.value = DeleteFolderFailed(error: e.toString());
+      print(e.toString());
+    }
+  }
 
+  Stream<EncryptState> _logOut() async* {
+    try {
+      await useCase.logOut();
+      signOutState.value = SignedOutSuccessFully();
+    } catch (e) {
+      signOutState.value = SignedOutFailed(error: e.toString());
+    }
+  }
 
+  @override
+  Future<void> close() {
+    decryptState.close();
+    signOutState.close();
+    deletefolderState.close();
+    createNewFolderState.close();
+    return super.close();
+  }
 }

@@ -3,6 +3,7 @@ import 'package:data_protector/auth/blocs/auth_events.dart';
 import 'package:data_protector/auth/blocs/auth_states.dart';
 import 'package:data_protector/encryptImages/widgets/show_encrypted_images_widget.dart';
 import 'package:data_protector/ui/UiHelpers.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -14,7 +15,7 @@ class PrepareSettings extends StatefulWidget {
 class _PrepareSettingsState extends State<PrepareSettings> {
   TextEditingController key;
 
-  AuthBloc _authBloc = Get.find<AuthBloc>();
+  AuthBloc _authBloc = AuthBloc(authUseCase: Get.find());
 
   @override
   void initState() {
@@ -23,41 +24,84 @@ class _PrepareSettingsState extends State<PrepareSettings> {
   }
 
   @override
+  void dispose() {
+    _authBloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     _authBloc.authState.listen((state) {
       if (state is AddingSettings) {
-        showCustomDialog(context: context ,title: "Wait a bit !" , children: [CircularProgressIndicator()] );
+        showCustomDialog(
+            context: context,
+            title: "Wait a bit !",
+            children: [CircularProgressIndicator()]);
       } else if (state is AddedSettings) {
-        Navigator.push(context,
+        Navigator.pushReplacement(context,
             MaterialPageRoute(builder: (_) => EncryptedImagesWidget()));
-      } else if (state is AddSettingsError){
-        showCustomDialog(context: context ,title: "Error bro !" , children: [Text(state.error)]);
+      } else if (state is AddSettingsError) {
+        showCustomDialog(
+            context: context,
+            title: "Error bro !",
+            children: [Text(state.error)]);
       }
     });
     return Scaffold(
       body: Container(
-          padding: EdgeInsets.only(top: 50.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          padding: EdgeInsets.only(left: 20.0, right: 20.0),
+          child: ListView(
             children: [
-              TextField(
-                controller: key,
-                decoration: InputDecoration(
-                    labelText: 'Set your private encryption key',
-                    labelStyle: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey),
-                    focusedBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.green))),
-                obscureText: true,
-              ),
-              SizedBox(height: 20.0),
-              RaisedButton(
-                onPressed: () {
-                  _authBloc.add(SetSettings(key: key.value.text));
-                },
-                child: Text("Set The key"),
+              Center(
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 50.0,
+                    ),
+                    Container(
+                      height: 200.0,
+                      width: 200.0,
+                      decoration: BoxDecoration(
+                          image: DecorationImage(
+                              image: AssetImage("assets/lock_im.png"))),
+                    ),
+                    SizedBox(
+                      height: 50.0,
+                    ),
+                    Text(
+                      "You would set your own key for encryption and this key will be used"
+                      " by the encryption algorithm but be careful no one except you should know it",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey[700], fontSize: 15.0),
+                    ),
+                    SizedBox(
+                      height: 30.0,
+                    ),
+                    TextField(
+                      controller: key,
+                      decoration: InputDecoration(
+                          labelText: 'Set your private encryption key',
+                          labelStyle: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey),
+                          focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.green))),
+                      obscureText: true,
+                    ),
+                    SizedBox(height: 70.0),
+                    RaisedButton(
+                      onPressed: () {
+                        _authBloc.add(SetSettings(key: key.value.text));
+                      },
+                      color: Theme.of(context).primaryColor,
+                      child: Text(
+                        "Set The key",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    )
+                  ],
+                ),
               )
             ],
           )),

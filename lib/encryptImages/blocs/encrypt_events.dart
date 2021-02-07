@@ -9,7 +9,13 @@ class EncryptEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class GetAllImages extends EncryptEvent{}
+class GetStoredFiles extends EncryptEvent{
+  String path;
+  bool clearTheList;
+  GetStoredFiles({this.path , this.clearTheList});
+  @override
+  List<Object> get props => [path , clearTheList];
+}
 class EncryptImages extends EncryptEvent{
   List<Uint8List> images;
   EncryptImages({this.images});
@@ -20,6 +26,21 @@ class EncryptImages extends EncryptEvent{
 class DecryptImages extends EncryptEvent{
 }
 
+class DeleteFolders extends EncryptEvent{
+  List<FileWrapper> folders;
+  DeleteFolders({this.folders});
+  @override
+  // TODO: implement props
+  List<Object> get props => [folders];
+}
+
+class CreateNewFolder extends EncryptEvent{
+  String name;
+  CreateNewFolder({this.name});
+  @override
+  List<Object> get props => [name];
+}
+
 class PickingImagesError extends EncryptEvent{
   String error;
   PickingImagesError({this.error});
@@ -28,7 +49,7 @@ class PickingImagesError extends EncryptEvent{
 }
 
 class GotImagesEvent extends EncryptEvent{
-  List<ImageFileWrapper> images;
+  List<FileWrapper> images;
 
   GotImagesEvent({this.images});
 
@@ -36,3 +57,5 @@ class GotImagesEvent extends EncryptEvent{
   // TODO: implement props
   List<Object> get props => [images];
 }
+
+class LogOut extends EncryptEvent{}

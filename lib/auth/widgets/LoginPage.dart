@@ -20,7 +20,7 @@ class _LoginPageState extends State<LoginPage>
   TextEditingController _emailController;
   TextEditingController _passwordController;
 
-  AuthBloc _authBloc = Get.find<AuthBloc>();
+  AuthBloc _authBloc = AuthBloc(authUseCase: Get.find());
 
   @override
   void initState() {
@@ -48,21 +48,32 @@ class _LoginPageState extends State<LoginPage>
   @override
   void dispose() {
     _authBloc.close();
+    animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-
     _authBloc.authState.listen((state) {
-      print("koko > "+ state.toString());
-      if (state is Authenticating) {
-        Get.snackbar("auth", "Authenticating");
-      } else if (state is LoggedIn) {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (_) => EncryptedImagesWidget()));
-      } else if (state is AuthError){
-        showCustomDialog(context: context ,title: "Error bro !" , children: [Text(state.error)]);
+      if (_authBloc.previousAuthState != state) {
+        print("koko > " + state.toString());
+        _authBloc.previousAuthState = state;
+        if (state is Authenticating) {
+          showCustomDialog(
+              context: context,
+              title: "Wait a bit ...",
+              children: [Center(child: CircularProgressIndicator())],
+              dissmissable: false);
+        } else if (state is LoggedIn) {
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => EncryptedImagesWidget()));
+        } else if (state is AuthError) {
+          Navigator.pop(context);
+          showCustomDialog(
+              context: context,
+              title: "Error bro !",
+              children: [Text(state.error)]);
+        }
       }
     });
 
@@ -111,7 +122,7 @@ class _LoginPageState extends State<LoginPage>
                     style: TextStyle(
                         fontSize: 80.0,
                         fontWeight: FontWeight.bold,
-                        color: Colors.green),
+                        color: Theme.of(context).primaryColor),
                   ),
                 )
               ],
@@ -178,7 +189,7 @@ class _LoginPageState extends State<LoginPage>
                     child: Text(
                       "Forgot Password",
                       style: TextStyle(
-                          color: Colors.green,
+                          color: Theme.of(context).primaryColor,
                           fontWeight: FontWeight.bold,
                           fontFamily: "Montserrat",
                           decoration: TextDecoration.underline),
@@ -186,18 +197,20 @@ class _LoginPageState extends State<LoginPage>
                   ),
                 ),
                 SizedBox(height: 40.0),
-                Container(
-                  height: 40.0,
-                  child: Material(
-                    borderRadius: BorderRadius.circular(20.0),
-                    shadowColor: Colors.greenAccent,
-                    color: Colors.green,
-                    child: GestureDetector(
-                      onTap: () {
-                        _authBloc.add(Login(
-                            email: _emailController.value.text,
-                            password: _passwordController.value.text));
-                      },
+                GestureDetector(
+                  onTap: () {
+                    _authBloc.add(Login(
+                        email: _emailController.value.text,
+                        password: _passwordController.value.text));
+                    print("koko > login click");
+                    print("koko authbloc > " + _authBloc.state.toString());
+                  },
+                  child: Container(
+                    height: 40.0,
+                    child: Material(
+                      borderRadius: BorderRadius.circular(20.0),
+                      shadowColor: Theme.of(context).primaryColor,
+                      color: Theme.of(context).primaryColor,
                       child: Center(
                         child: Text(
                           "LOGIN",
@@ -259,12 +272,13 @@ class _LoginPageState extends State<LoginPage>
               SizedBox(width: 5.0),
               InkWell(
                 onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => SignupPage()));
+                  Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (_) => SignupPage()));
                 },
                 child: Text(
                   "Register",
                   style: TextStyle(
-                      color: Colors.green,
+                      color: Theme.of(context).primaryColor,
                       fontFamily: "Montserrat",
                       fontWeight: FontWeight.bold,
                       decoration: TextDecoration.underline),

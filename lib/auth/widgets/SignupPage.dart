@@ -14,7 +14,7 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-  AuthBloc _authBloc = Get.find<AuthBloc>();
+  AuthBloc _authBloc = AuthBloc(authUseCase: Get.find());
   TextEditingController _emailController;
   TextEditingController _passwordController;
   TextEditingController _usernameController;
@@ -26,22 +26,31 @@ class _SignupPageState extends State<SignupPage> {
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
     _usernameController = TextEditingController();
-
-
   }
 
+  @override
+  void dispose() {
+    _authBloc.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     _authBloc.authState.listen((state) {
-      print("koko state > "+state.toString());
+      print("koko state > " + state.toString());
       if (state is Authenticating) {
-        showCustomDialog(context: context ,title: "Wait a bit !" , children: [CircularProgressIndicator()] );
+        showCustomDialog(
+            context: context,
+            title: "Wait a bit !",
+            children: [CircularProgressIndicator()]);
       } else if (state is SignedUp) {
-        Navigator.push(
+        Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (_) => PrepareSettings()));
-      } else if (state is AuthError){
-        showCustomDialog(context: context ,title: "Error bro !" , children: [Text(state.error)]);
+      } else if (state is AuthError) {
+        showCustomDialog(
+            context: context,
+            title: "Error bro !",
+            children: [Text(state.error)]);
       }
     });
     return new Scaffold(
@@ -67,7 +76,7 @@ class _SignupPageState extends State<SignupPage> {
                         style: TextStyle(
                             fontSize: 80.0,
                             fontWeight: FontWeight.bold,
-                            color: Colors.green),
+                            color: Theme.of(context).primaryColor),
                       ),
                     )
                   ],
@@ -139,28 +148,28 @@ class _SignupPageState extends State<SignupPage> {
                       SizedBox(height: 5.0),
                       GestureDetector(
                         onTap: () {
-                            _authBloc.add(Signup(
-                                email: _emailController.value.text,
-                                password: _passwordController.value.text,
-                                username: _usernameController.value.text));
-                          },
+                          _authBloc.add(Signup(
+                              email: _emailController.value.text,
+                              password: _passwordController.value.text,
+                              username: _usernameController.value.text));
+                        },
                         child: Container(
                           height: 40.0,
                           child: Material(
-                              borderRadius: BorderRadius.circular(20.0),
-                              shadowColor: Colors.greenAccent,
-                              color: Colors.green,
-                              elevation: 7.0,
-                              child: Center(
-                                child: Text(
-                                  'SIGNUP',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: 'Montserrat'),
-                                ),
+                            borderRadius: BorderRadius.circular(20.0),
+                            shadowColor: Theme.of(context).primaryColor,
+                            color: Theme.of(context).primaryColor,
+                            elevation: 7.0,
+                            child: Center(
+                              child: Text(
+                                'SIGNUP',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Montserrat'),
                               ),
                             ),
+                          ),
                         ),
                       ),
                       SizedBox(height: 20.0),

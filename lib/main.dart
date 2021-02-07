@@ -25,7 +25,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   final Future<FirebaseApp> _initialization = Firebase.initializeApp();
 
   @override
@@ -51,13 +50,13 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget loading(){
+  Widget loading() {
     return Center(
       child: CircularProgressIndicator(),
     );
   }
 
-  Widget error(){
+  Widget error() {
     return Center(
       child: Text("Error with the app"),
     );

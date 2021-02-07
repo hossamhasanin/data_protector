@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:isolate';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:base/datasource/Database.dart';
@@ -8,6 +10,7 @@ import 'package:base/datasource/network/AuthDataSource.dart';
 import 'package:base/encrypt/encryption.dart';
 import 'package:data_protector/encryptImages/wrappers/GetImagesStreamWrapper.dart';
 import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
+import 'package:data_protector/ui/UiHelpers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:base/Constants.dart';
@@ -20,47 +23,64 @@ class EnnryptImagesUseCase {
   EnnryptImagesUseCase(
       {this.dataScource, this.encrypting, this.authDataSource});
 
-  // Future<List<ImageFileWrapper>> getAllImages() async {
-  //   await dataScource.initDatabase();
-  //   List<ImageFileWrapper> files = (await dataScource.getFiles()).map((val) {
-  //      var encImageFile = new File(val.path).readAsBytesSync();
-  //      var decImageFile = encrypting.decrypt(encImageFile);
-  //      ImageFileWrapper image = ImageFileWrapper(imageFile: val , uint8list: decImageFile);
-  //      return image;
-  //   }).toList();
-  //   return files;
-  // }
-
-  Stream<GetImagesStreamWrapper> getAllImages() async* {
+  Stream<GetImagesStreamWrapper> getAllImages({String path}) async* {
     await dataScource.initDatabase();
     String key = await _getEncKey();
-    List<ImageFileWrapper> readyToLoad = [];
-    var files = await dataScource.getFiles();
+    List<FileWrapper> readyToLoad = [];
+    var files = await dataScource.getFiles(path);
+    // var k = await dataScource.k();
+    // print("koko > key " + k.toString());
+
+    print("koko > all files in database is " + files.length.toString());
     var c = 0;
     if (files.isNotEmpty) {
       for (var i = 0; i <= files.length - 1; i++) {
         var file = files[i];
+        var decImageFile = null;
+        try {
+          //
+          if (file.type == FileType.IMAGE.index) {
+            var encImageFile =
+                new File(file.path + "/" + file.name).readAsBytesSync();
+            decImageFile = encrypting.decrypt(encImageFile, key);
+          } else if (file.type == FileType.FOLDER.index) {
+            var isFolderExist = await Directory(path).exists();
+            if (!isFolderExist)
+              throw FileSystemException(
+                  "'${file.name}' folder does not exist anymore");
+          }
 
-        try{
-          var encImageFile = new File(file.path).readAsBytesSync();
-          var decImageFile = encrypting.decrypt(encImageFile, key);
-          ImageFileWrapper image =
-          ImageFileWrapper(imageFile: file, uint8list: decImageFile);
+          FileWrapper readyFile =
+              FileWrapper(file: file, uint8list: decImageFile);
 
-          readyToLoad.add(image);
-          //yield image;
-          if (readyToLoad.length == IMAGES_PER_PROCESS || i == files.length - 1) {
+          readyToLoad.add(readyFile);
+
+          if (readyToLoad.length == FILES_PER_PROCESS ||
+              i == files.length - 1) {
             c += 1;
             GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
-                images: readyToLoad, done: false, empty: false);
+                images: readyToLoad, done: false, empty: false, error: null);
             yield imagesStreamWrapper;
             readyToLoad.clear();
             print("koko count > " + c.toString());
           }
-        } catch(e){
-          dataScource.deleteFile(file);
-        }
+        } catch (e) {
+          // if it crashed before the number of processed files complete
+          // i want it to load what has been ready and empty its load and delete the corupted file
+          // form the database then return to continue the rest of the loop
 
+          GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
+              images: readyToLoad, done: false, empty: false, error: e);
+          yield imagesStreamWrapper;
+          readyToLoad.clear();
+
+          await dataScource.deleteFile(file).whenComplete(() {
+            print("koko > deleted " + file.id);
+          });
+
+          print("koko error loading the images > " + e.toString());
+          continue;
+        }
       }
       GetImagesStreamWrapper imagesStreamWrapper =
           GetImagesStreamWrapper(images: null, done: true, empty: false);
@@ -76,26 +96,35 @@ class EnnryptImagesUseCase {
     return authDataSource.getEncryptionKey();
   }
 
-  Future<Exception> encryptImages(List<Uint8List> images) async {
+  Future<Exception> encryptImages(List<Uint8List> images, String path) async {
     String key = await _getEncKey();
     List<F.File> files = [];
     for (var image in images) {
-      var dir = await getExternalStorageDirectory();
-      var testdir =
-          await new Directory('${dir.path}/protected').create(recursive: true);
-      print(testdir.path);
       var dateTime = DateTime.now().toUtc().toIso8601String();
       var fileName = "$dateTime.hg";
-      var filePath = "${testdir.path}/$fileName";
-      var file = F.File(name: fileName, id: dateTime, path: filePath);
+      var filePath = "$path/$fileName";
+      var file = F.File(
+          name: fileName, id: dateTime, path: path, type: FileType.IMAGE.index);
       files.add(file);
 
       var encrypted = encrypting.encrypt(image, key);
 
       await _saveImage(encrypted.bytes, filePath);
+      await dataScource.addOrUpdateFile(file);
     }
     print("koko > save files " + files.length.toString());
-    await dataScource.addFiles(files);
+    //await dataScource.addFiles(files);
+  }
+
+  Future createNewFolder(String name, String curretntPath) async {
+    await new Directory("$curretntPath/$name").create();
+    var dateTime = DateTime.now().toUtc().toIso8601String();
+    var file = F.File(
+        name: name,
+        id: dateTime,
+        path: curretntPath,
+        type: FileType.FOLDER.index);
+    return await dataScource.addOrUpdateFile(file);
   }
 
   Future<File> _saveImage(Uint8List image, String fileName) async {
@@ -118,19 +147,50 @@ class EnnryptImagesUseCase {
     }
   }
 
-  Future decryptImages(List<ImageFileWrapper> images) async {
+  Future decryptImages(List<FileWrapper> images) async {
     var dir = await getExternalStorageDirectory();
     var decryptedImagesPath =
-    await new Directory('${dir.path}/decrypted').create(recursive: true);
-    try{
-      for (ImageFileWrapper image in images){
-        await _saveImage(image.uint8list, "$decryptedImagesPath/${image.imageFile.name}");
-        await PhotoManager.editor.saveImage(image.uint8list , title: image.imageFile.name);
-        await dataScource.deleteFile(image.imageFile);
-        await _deleteFile(image.imageFile.path);
+        await new Directory('${dir.path}/decrypted').create(recursive: true);
+    try {
+      for (FileWrapper image in images) {
+        var name = image.file.name.replaceAll(".hg", ".jpg");
+        await _saveImage(image.uint8list, "${decryptedImagesPath.path}/$name");
+        await PhotoManager.editor.saveImage(image.uint8list, title: name);
+        await _deleteFile(image.file.path + "/" + image.file.name);
+        await dataScource.deleteFile(image.file);
       }
-    }catch(e){
+    } catch (e) {
       return Future.error(e);
     }
+  }
+
+  Future deleteFolders(List<FileWrapper> folders) async {
+    FileWrapper scopedFolder = null;
+    try {
+      for (var folder in folders) {
+        scopedFolder = folder;
+        await dataScource.deleteFile(folder.file);
+        print("koko > deleted the folder from database");
+        var path = folder.file.path + "/" + folder.file.name;
+        await new Directory(path).delete(recursive: true);
+        print("koko > deleted the folder");
+        List<F.File> files = await dataScource.getFiles(path);
+        print("koko > get stored files");
+        if (files.isNotEmpty) {
+          await dataScource.deleteAllFiles(files);
+        }
+        print("koko > deleted the folder stored files");
+      }
+    } on FileSystemException catch (e) {
+      await dataScource.deleteFile(scopedFolder.file);
+      print("koko > deleted the folder from database");
+      return Future.error(
+          "Error while deleting ${scopedFolder.file.name} it appears "
+          "that it doesn't exit on the phone any more");
+    }
+  }
+
+  Future logOut() {
+    return authDataSource.logOut();
   }
 }

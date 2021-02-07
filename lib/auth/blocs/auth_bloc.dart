@@ -9,6 +9,7 @@ import 'package:get/get_rx/get_rx.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthUseCase _authUseCase;
   Rx<AuthState> authState = AuthState().obs;
+  AuthState previousAuthState;
 
   AuthBloc({AuthUseCase authUseCase})
       : _authUseCase = authUseCase,
@@ -42,7 +43,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       await _authUseCase.signup(event.username, event.email, event.password);
       authState.value = SignedUp();
-      print("koko > "+authState.value.toString());
+      print("koko > " + authState.value.toString());
     } catch (e) {
       authState.value = AuthError(error: e.toString());
     }
@@ -52,14 +53,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     authState.value = AddingSettings();
     try {
       await _authUseCase.setSettings(event.key);
-    authState.value = AddedSettings();
+      authState.value = AddedSettings();
     } catch (e) {
       authState.value = AddSettingsError(error: e.toString());
     }
   }
 
-  isLoggedIn(){
-    if (_authUseCase.isLoggedIn()){
+  isLoggedIn() {
+    if (_authUseCase.isLoggedIn()) {
       authState.value = LoggedIn();
       print("koko logged in");
     } else {
