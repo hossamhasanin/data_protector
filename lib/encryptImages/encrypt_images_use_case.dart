@@ -8,6 +8,7 @@ import 'package:base/datasource/DatabaseImbl.dart';
 import 'package:base/datasource/File.dart' as F;
 import 'package:base/datasource/network/AuthDataSource.dart';
 import 'package:base/encrypt/encryption.dart';
+import 'package:base/models/user.dart';
 import 'package:data_protector/encryptImages/wrappers/GetImagesStreamWrapper.dart';
 import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
 import 'package:data_protector/ui/UiHelpers.dart';
@@ -20,6 +21,7 @@ class EnnryptImagesUseCase {
   Database dataScource;
   AuthDataSource authDataSource;
   Encrypt encrypting;
+
   EnnryptImagesUseCase(
       {this.dataScource, this.encrypting, this.authDataSource});
 
@@ -117,7 +119,10 @@ class EnnryptImagesUseCase {
   }
 
   Future createNewFolder(String name, String curretntPath) async {
-    await new Directory("$curretntPath/$name").create();
+    var totalPath = "$curretntPath/$name";
+    bool isFoldeExist = await Directory(totalPath).exists();
+    if (isFoldeExist) throw "This Folder name is here already";
+    await new Directory(totalPath).create();
     var dateTime = DateTime.now().toUtc().toIso8601String();
     var file = F.File(
         name: name,
@@ -192,5 +197,9 @@ class EnnryptImagesUseCase {
 
   Future logOut() {
     return authDataSource.logOut();
+  }
+
+  Stream<User> userData() {
+    return authDataSource.userData;
   }
 }

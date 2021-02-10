@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:base/datasource/File.dart';
+import 'package:base/models/user.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_events.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_states.dart';
 import 'package:data_protector/encryptImages/encrypt_images_use_case.dart';
@@ -24,12 +25,21 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
 
   RxList<FileWrapper> selectedFolder = List<FileWrapper>().obs;
 
+  // Note : Using diffrent states like that and diffrent streams i think it could have done better
+  // if i put them as a property in single class and call it viewState for example
   Rx<DecryptState> decryptState = DecryptState().obs;
   Rx<DeleteFolderState> deletefolderState = DeleteFolderState().obs;
   Rx<CreateNewFolderState> createNewFolderState = CreateNewFolderState().obs;
   Rx<SignOutState> signOutState = SignOutState().obs;
+  // Note : this should have its own state classes too but i was a little lazy to write them
+  // so just used quick solution :)
+  Rx<Exception> encryptState = Exception().obs;
 
-  EncryptImagesBloc({this.useCase}) : super(InitEncryptState());
+  Rx<User> user = User().obs;
+
+  EncryptImagesBloc({this.useCase}) : super(InitEncryptState()) {
+    user.bindStream(useCase.userData());
+  }
 
   @override
   Stream<EncryptState> mapEventToState(EncryptEvent event) async* {
@@ -98,6 +108,18 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
     try {
       var mainDir = await getExternalStorageDirectory();
       var path = dir.value == "/" ? "${mainDir.path}" : dir.value;
+
+      // !! Note : this validation part could be better practise to be in its own class
+      // but for simplicity i didn't put into one .
+      final validCharacters = RegExp(r'^[a-zA-Z0-9_]+$');
+      if (event.name.length < 3) {
+        throw "Folder name cann't be so small";
+      } else if (event.name.length > 25) {
+        throw "Folder name cann't be so long";
+      } else if (!validCharacters.hasMatch(event.name)) {
+        throw "Folder name cann't have a specail characters of white spaces";
+      }
+
       await useCase.createNewFolder(event.name, path);
       createNewFolderState.value = CreateNewFolderDone();
       add(GetStoredFiles(path: dir.value, clearTheList: true));
@@ -113,9 +135,10 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
       var path = dir.value == "/" ? "${mainDir.path}" : dir.value;
       print("koko > enc path $path");
       await useCase.encryptImages(event.images, path);
+      encryptState.value = null;
       add(GetStoredFiles(path: dir.value, clearTheList: true));
     } catch (e) {
-      yield EncryptFailed(error: e.toString());
+      encryptState.value = e;
       print("koko > enc error : " + e.toString());
     }
   }

@@ -56,7 +56,7 @@ class _LoginPageState extends State<LoginPage>
   Widget build(BuildContext context) {
     _authBloc.authState.listen((state) {
       if (_authBloc.previousAuthState != state) {
-        print("koko > " + state.toString());
+        print("koko LoginPage > " + state.toString());
         _authBloc.previousAuthState = state;
         if (state is Authenticating) {
           showCustomDialog(
@@ -272,8 +272,8 @@ class _LoginPageState extends State<LoginPage>
               SizedBox(width: 5.0),
               InkWell(
                 onTap: () {
-                  Navigator.of(context)
-                      .push(MaterialPageRoute(builder: (_) => SignupPage()));
+                  Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => SignupPage()));
                 },
                 child: Text(
                   "Register",

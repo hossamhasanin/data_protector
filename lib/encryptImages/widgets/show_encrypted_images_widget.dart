@@ -1,9 +1,11 @@
 import 'dart:typed_data';
 
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:data_protector/auth/widgets/LoginPage.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_bloc.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_events.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_states.dart';
+import 'package:data_protector/encryptImages/widgets/show_full_image.dart';
 import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
 import 'package:data_protector/ui/UiHelpers.dart';
 import 'package:data_protector/ui/styles.dart';
@@ -13,6 +15,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:photo/photo.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:data_protector/util/helper_functions.dart';
 
 class EncryptedImagesWidget extends StatefulWidget {
   @override
@@ -47,6 +50,30 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     watchDecryptState();
     watchLogOutState();
     watchDeleteFolderState();
+
+    // Note : this part should have been seperate in its own function
+    bloc.encryptState.listen((error) {
+      print("came here");
+      if (error == null) {
+        AwesomeDialog(
+            context: context,
+            title: "Hey !",
+            dialogType: DialogType.INFO,
+            desc:
+                "Be aware that the original images hasn't been deleted from the gallery "
+                "so you should go and delete those images from your gallery first , "
+                "and dont worry the app now protect those images by encrypting them for you ")
+          ..show();
+      } else {
+        AwesomeDialog(
+            context: context,
+            dialogType: DialogType.WARNING,
+            animType: AnimType.SCALE,
+            title: "Failed !",
+            desc: error.toString())
+          ..show();
+      }
+    });
 
     bloc.add(GetStoredFiles(path: "/", clearTheList: false));
   }
@@ -158,29 +185,33 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                       height: 72.0,
                       width: 72.0,
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        // image: DecorationImage(image: AssetImage("assets/lock_im.png"))
-                      ),
+                          shape: BoxShape.circle,
+                          image: DecorationImage(
+                              image:
+                                  AssetImage("assets/images/lock_icon.png"))),
                     );
                   }
                 }),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Hi Hossam",
-                      style: nameTextStyle,
-                    ),
-                    SizedBox(
-                      height: 20.0,
-                    ),
-                    Text(
-                      "Protect your files",
-                      style: subTextStyle,
-                    ),
-                  ],
+                Expanded(
+                  child: Obx(() => Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Hi, ${bloc.user.value.name.capitalizeFirstLetter()}",
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: nameTextStyle,
+                          ),
+                          SizedBox(
+                            height: 20.0,
+                          ),
+                          Text(
+                            "Protect your files",
+                            style: subTextStyle,
+                          ),
+                        ],
+                      )),
                 ),
                 Obx(() => buildMenuesRow())
               ],
@@ -197,7 +228,15 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                 borderRadius: BorderRadius.only(
                     topRight: Radius.circular(30.0),
                     topLeft: Radius.circular(30.0))),
-            child: mainContents(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Obx(() => Text(
+                    "Your files : " + exctractCurrentFolderName(bloc.dir.value),
+                    style: titleTextStyle)),
+                mainContents()
+              ],
+            ),
           ))
         ],
       ),
@@ -273,6 +312,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
   }
 
   Widget mainContents() {
+    double screeHeight = MediaQuery.of(context).size.height;
     return BlocProvider(
       create: (_) => bloc,
       child: BlocBuilder<EncryptImagesBloc, EncryptState>(
@@ -281,17 +321,26 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
             if (state.images.isNotEmpty) {
               return buildGridView(state);
             } else {
-              return Center(
-                child: Text("No Encrypted Images Yet ."),
+              return Container(
+                margin: EdgeInsets.only(top: screeHeight / 3),
+                child: Center(
+                  child: Text("No Encrypted Images Yet ."),
+                ),
               );
             }
           } else if (state is GettingImagesFailed) {
-            return Center(
-              child: Text(state.error),
+            return Container(
+              margin: EdgeInsets.only(top: screeHeight / 3),
+              child: Center(
+                child: Text(state.error),
+              ),
             );
           } else if (state is GettingImages) {
-            return Center(
-              child: CircularProgressIndicator(),
+            return Container(
+              margin: EdgeInsets.only(top: screeHeight / 3),
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
             );
           } else {
             return Container();
@@ -347,7 +396,13 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                     }
                   }
                 }
-              : null,
+              : () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              ShowFullImage(image: image.uint8list)));
+                },
           child: Container(
             padding: bloc.selectedImages.contains(image)
                 ? EdgeInsets.all(5.0)
@@ -356,12 +411,20 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
               borderRadius: BorderRadius.all(Radius.circular(10.0)),
               color: bloc.selectedImages.contains(image) ? Colors.grey : null,
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                  image: DecorationImage(
-                      image: MemoryImage(image.uint8list), fit: BoxFit.cover),
-                  borderRadius: BorderRadius.circular(30.0),
-                  boxShadow: [BoxShadow(color: Colors.grey, blurRadius: 5.0)]),
+            child: Hero(
+              tag: image.file.id,
+              child: Container(
+                  decoration: BoxDecoration(
+                      image: DecorationImage(
+                          image: MemoryImage(image.uint8list),
+                          fit: BoxFit.cover),
+                      borderRadius: BorderRadius.circular(30.0),
+                      boxShadow: [
+                    BoxShadow(
+                        color: Colors.grey,
+                        blurRadius: 5.0,
+                        offset: Offset(0, 2))
+                  ])),
             ),
           ),
         ));
@@ -413,7 +476,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                 ),
                 Text(
                   folder.file.name,
-                  style: TextStyle(color: Colors.black, fontSize: 18.0),
+                  style: subTitleTextStyle,
                 )
               ],
             ),
@@ -429,7 +492,11 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
       } else if (state is CreateNewFolderDone) {
         Get.snackbar("Folders", "Folder created successfully");
       } else if (state is CreateNewFolderFailed) {
-        Get.snackbar("Folders", "Error happened while creating the folder !");
+        Get.defaultDialog(
+            title: "Folders Error",
+            content: Padding(
+                padding: EdgeInsets.all(20.0), child: Text(state.error)),
+            backgroundColor: Colors.white);
         printError(info: state.error);
       }
     });
@@ -493,6 +560,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
         ),
         onPressed: () {
           bloc.add(CreateNewFolder(name: folderName.text));
+          folderName.clear();
           Navigator.pop(context);
         },
       )

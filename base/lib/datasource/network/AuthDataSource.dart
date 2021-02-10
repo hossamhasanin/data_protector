@@ -9,4 +9,5 @@ abstract class AuthDataSource {
   Future<String> getEncryptionKey();
   bool isLogedIn();
   Future<void> logOut();
+  Stream<User> get userData;
 }

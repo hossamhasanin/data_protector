@@ -41,6 +41,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Stream<AuthState> signup(Signup event) async* {
     authState.value = Authenticating();
     try {
+      // !! Note : this validation part could be better practise to be in its own class
+      // but for simplicity i didn't put into one .
+      final validCharacters = RegExp(r'^[a-zA-Z0-9_]+$');
+      if (event.username.length < 3) {
+        throw "user name cann't be so small";
+      } else if (event.username.length > 15) {
+        throw "user name cann't be so long";
+      } else if (!validCharacters.hasMatch(event.username)) {
+        throw "user name cann't have a specail characters of white spaces";
+      }
+
+      if (!event.email.contains("@")) {
+        throw "You cann't write an email without an '@' right ? ";
+      }
+
       await _authUseCase.signup(event.username, event.email, event.password);
       authState.value = SignedUp();
       print("koko > " + authState.value.toString());

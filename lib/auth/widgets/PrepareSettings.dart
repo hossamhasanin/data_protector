@@ -32,6 +32,7 @@ class _PrepareSettingsState extends State<PrepareSettings> {
   @override
   Widget build(BuildContext context) {
     _authBloc.authState.listen((state) {
+      print("koko PrepareSettings state > " + state.toString());
       if (state is AddingSettings) {
         showCustomDialog(
             context: context,
@@ -63,7 +64,7 @@ class _PrepareSettingsState extends State<PrepareSettings> {
                       width: 200.0,
                       decoration: BoxDecoration(
                           image: DecorationImage(
-                              image: AssetImage("assets/lock_im.png"))),
+                              image: AssetImage("assets/images/lock_im.png"))),
                     ),
                     SizedBox(
                       height: 50.0,
@@ -92,7 +93,8 @@ class _PrepareSettingsState extends State<PrepareSettings> {
                     SizedBox(height: 70.0),
                     RaisedButton(
                       onPressed: () {
-                        _authBloc.add(SetSettings(key: key.value.text));
+                        if (key.value.text.isNotEmpty && key.value.text != null)
+                          _authBloc.add(SetSettings(key: key.value.text));
                       },
                       color: Theme.of(context).primaryColor,
                       child: Text(

@@ -14,9 +14,10 @@ class FirebaseAuthDataSource implements AuthDataSource {
   }
 
   @override
-  Future<String> signup(String username, String email, String password) async{
+  Future<String> signup(String username, String email, String password) async {
     var signup = await _auth.createUserWithEmailAndPassword(
         email: email, password: password);
+    await signup.user.updateProfile(displayName: username);
     return Future.value(signup.user.uid);
   }
 
@@ -62,4 +63,10 @@ class FirebaseAuthDataSource implements AuthDataSource {
   Future<void> logOut() {
     return _auth.signOut();
   }
+
+  Stream<U.User> get userData => _auth.userChanges().map((event) => U.User(
+      name: event.displayName,
+      email: event.email,
+      id: event.uid,
+      encryptionKey: null));
 }
