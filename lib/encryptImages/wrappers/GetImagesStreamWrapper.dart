@@ -4,6 +4,6 @@ class GetImagesStreamWrapper {
   bool done;
   bool empty;
   List<FileWrapper> images;
-  Exception error;
+  String error;
   GetImagesStreamWrapper({this.images, this.done, this.empty, this.error});
 }

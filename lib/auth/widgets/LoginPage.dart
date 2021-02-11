@@ -1,12 +1,14 @@
 import 'package:data_protector/auth/blocs/auth_bloc.dart';
 import 'package:data_protector/auth/blocs/auth_events.dart';
 import 'package:data_protector/auth/blocs/auth_states.dart';
+import 'package:data_protector/auth/widgets/PrepareSettings.dart';
 import 'package:data_protector/auth/widgets/SignupPage.dart';
 import 'package:data_protector/encryptImages/widgets/show_encrypted_images_widget.dart';
 import 'package:data_protector/ui/UiHelpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -21,6 +23,7 @@ class _LoginPageState extends State<LoginPage>
   TextEditingController _passwordController;
 
   AuthBloc _authBloc = AuthBloc(authUseCase: Get.find());
+  GetStorage box = GetStorage();
 
   @override
   void initState() {
@@ -43,6 +46,10 @@ class _LoginPageState extends State<LoginPage>
     muchDelayedAnimation = Tween(begin: -1.0, end: 0.0).animate(CurvedAnimation(
         curve: Interval(0.8, 1.0, curve: Curves.fastOutSlowIn),
         parent: animationController));
+
+    if (!box.hasData("notFirstTime") || box.read("notFirstTime") == null) {
+      box.write("notFirstTime", true);
+    }
   }
 
   @override
@@ -65,8 +72,12 @@ class _LoginPageState extends State<LoginPage>
               children: [Center(child: CircularProgressIndicator())],
               dissmissable: false);
         } else if (state is LoggedIn) {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (_) => EncryptedImagesWidget()));
+          if (state.didnotCompleteSignup)
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => PrepareSettings()));
+          else
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => EncryptedImagesWidget()));
         } else if (state is AuthError) {
           Navigator.pop(context);
           showCustomDialog(

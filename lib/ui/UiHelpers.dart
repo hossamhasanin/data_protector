@@ -52,8 +52,8 @@ Widget animatedFloatingActionButtons(
         child: new ScaleTransition(
           scale: new CurvedAnimation(
             parent: floatingButtonController,
-            curve: new Interval(0.0, 1.0 - index / buttonsIcons.length / 2.0,
-                curve: Curves.easeOut),
+            curve: new Interval(0.0, 1.0 - index / (buttonsIcons.length * 4.0),
+                curve: Curves.linearToEaseOut),
           ),
           child: new FloatingActionButton(
             heroTag: null,

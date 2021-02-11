@@ -10,6 +10,8 @@ import 'package:base/datasource/Database.dart';
 import 'package:base/datasource/DatabaseImbl.dart';
 import 'package:base/encrypt/encryption.dart' as E;
 
+import 'onboardingScreen/OnboardingController.dart';
+
 void injection() {
   // core stuff
   Get.put<E.Encrypt>(E.EncryptImple());
@@ -28,4 +30,5 @@ void injection() {
   // blocs
   // Get.put(EncryptImagesBloc(useCase: Get.find()));
   // Get.put(AuthBloc(authUseCase: Get.find()));
+  Get.put(OnboardingController());
 }

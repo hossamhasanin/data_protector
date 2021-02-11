@@ -64,6 +64,14 @@ class FirebaseAuthDataSource implements AuthDataSource {
     return _auth.signOut();
   }
 
+  Future deleteUser() async {
+    await _firestore
+        .collection(USERS_COLLECTION)
+        .doc(_auth.currentUser.uid)
+        .delete();
+    return _auth.currentUser.delete();
+  }
+
   Stream<U.User> get userData => _auth.userChanges().map((event) => U.User(
       name: event.displayName,
       email: event.email,

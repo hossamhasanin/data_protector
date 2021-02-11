@@ -30,3 +30,5 @@ class SetSettings extends AuthEvent {
   @override
   List<Object> get props => [key];
 }
+
+class SetKeyInComplete extends AuthEvent {}

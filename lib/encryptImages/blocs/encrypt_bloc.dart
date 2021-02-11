@@ -31,9 +31,13 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
   Rx<DeleteFolderState> deletefolderState = DeleteFolderState().obs;
   Rx<CreateNewFolderState> createNewFolderState = CreateNewFolderState().obs;
   Rx<SignOutState> signOutState = SignOutState().obs;
+  Rx<ShareImageState> shareImagesState = ShareImageState().obs;
+  Rx<ImportEncFilesState> importEncFilesState = ImportEncFilesState().obs;
+  Rx<DeleteFilesState> deleteFilesState = DeleteFilesState().obs;
   // Note : this should have its own state classes too but i was a little lazy to write them
   // so just used quick solution :)
   Rx<Exception> encryptState = Exception().obs;
+  RxBool errorWhileDisplayingImage = false.obs;
 
   Rx<User> user = User().obs;
 
@@ -57,6 +61,12 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
       yield* _deleteFolders(event);
     } else if (event is LogOut) {
       yield* _logOut();
+    } else if (event is ShareImages) {
+      yield* _shareImages();
+    } else if (event is ImportEncFiles) {
+      yield* _importEncFiles();
+    } else if (event is DeleteFiles) {
+      yield* _deleteFiles();
     }
   }
 
@@ -96,7 +106,7 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
       }
 
       if (filesWrapper.error != null) {
-        Get.snackbar("Error !", filesWrapper.error.toString());
+        errorWhileDisplayingImage = true.obs;
       }
 
       add(GotImagesEvent(images: allImages));
@@ -131,8 +141,7 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
 
   Stream<EncryptState> _encryptImages(EncryptImages event) async* {
     try {
-      var mainDir = await getExternalStorageDirectory();
-      var path = dir.value == "/" ? "${mainDir.path}" : dir.value;
+      var path = await _providePath();
       print("koko > enc path $path");
       await useCase.encryptImages(event.images, path);
       encryptState.value = null;
@@ -177,12 +186,60 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
     }
   }
 
+  Stream<EncryptState> _shareImages() async* {
+    try {
+      shareImagesState.value = SharingImage();
+      await useCase.shareImages(
+          selectedImages.map((im) => im.file.path + im.file.name).toList());
+      shareImagesState.value = SharedImagesSuccessFully();
+    } catch (e) {
+      shareImagesState.value =
+          ShareImagesFailed(error: "Error happend while sharing");
+    }
+  }
+
+  Stream<EncryptState> _importEncFiles() async* {
+    try {
+      importEncFilesState.value = ImportingEncFiles();
+      var path = await _providePath();
+      await useCase.importEncryptedFiles(path);
+      importEncFilesState.value = ImportedEncFilesSuccessFully();
+      add(GetStoredFiles(path: dir.value, clearTheList: true));
+    } catch (e) {
+      print("koko error import enc files > " + e.toString());
+      print(e);
+      importEncFilesState.value =
+          ImportEncFilesFailed(error: "Failed while importing");
+    }
+  }
+
+  Stream<EncryptState> _deleteFiles() async* {
+    try {
+      deleteFilesState.value = DeletingFiles();
+      await useCase.deleteFiles(selectedImages);
+      deleteFilesState.value = DeleteFilesSuccessFully();
+      add(GetStoredFiles(path: dir.value, clearTheList: true));
+    } catch (e) {
+      print("koko error delete files > " + e.toString());
+      deleteFilesState.value =
+          DeleteFilesFailed(error: "Failed while deleting the files");
+    }
+  }
+
+  Future<String> _providePath() async {
+    var mainDir = await getExternalStorageDirectory();
+    var path = dir.value == "/" ? "${mainDir.path}" : dir.value;
+    return path;
+  }
+
   @override
   Future<void> close() {
     decryptState.close();
     signOutState.close();
     deletefolderState.close();
     createNewFolderState.close();
+    errorWhileDisplayingImage.close();
+    encryptState.close();
     return super.close();
   }
 }

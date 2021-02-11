@@ -12,7 +12,8 @@ class PrepareSettings extends StatefulWidget {
   _PrepareSettingsState createState() => _PrepareSettingsState();
 }
 
-class _PrepareSettingsState extends State<PrepareSettings> {
+class _PrepareSettingsState extends State<PrepareSettings>
+    with WidgetsBindingObserver {
   TextEditingController key;
 
   AuthBloc _authBloc = AuthBloc(authUseCase: Get.find());
@@ -20,13 +21,29 @@ class _PrepareSettingsState extends State<PrepareSettings> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     key = TextEditingController();
   }
 
   @override
   void dispose() {
     _authBloc.close();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.detached) {
+      print("koko closing");
+    } else if (state == AppLifecycleState.paused) {
+      print("koko paused");
+    } else if (state == AppLifecycleState.inactive) {
+      print("koko inactive");
+      _authBloc.add(SetKeyInComplete());
+    }
   }
 
   @override

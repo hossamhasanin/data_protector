@@ -9,13 +9,14 @@ class AuthUseCase {
       : _encrypt = encrypt,
         _authDataSource = authDataSource;
 
-  Future<void> login(String email, String password) {
-    return _authDataSource.login(email, password);
+  Future<String> login(String email, String password) async {
+    await _authDataSource.login(email, password);
+    return _authDataSource.getEncryptionKey();
   }
 
   Future<void> signup(String username, String email, String password) async {
     final userId = await _authDataSource.signup(username, email, password);
-    final user = User(id: userId , name: username, email: email);
+    final user = User(id: userId, name: username, email: email);
     return _authDataSource.createUserInDatabase(user);
   }
 
@@ -23,7 +24,12 @@ class AuthUseCase {
     String hashedKey = _encrypt.hash(key);
     return _authDataSource.setEncryptionKey(hashedKey);
   }
-  bool isLoggedIn(){
+
+  Future deleteUser() {
+    return _authDataSource.logOut();
+  }
+
+  bool isLoggedIn() {
     return _authDataSource.isLogedIn();
   }
 }

@@ -25,14 +25,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       yield* signup(event);
     } else if (event is SetSettings) {
       yield* setSettings(event);
+    } else if (event is SetKeyInComplete) {
+      yield* setKeyInComplete();
     }
   }
 
   Stream<AuthState> login(Login event) async* {
     authState.value = Authenticating();
     try {
-      await _authUseCase.login(event.email, event.password);
-      authState.value = LoggedIn();
+      var returnedEncKey =
+          await _authUseCase.login(event.email, event.password);
+
+      authState.value = LoggedIn(didnotCompleteSignup: returnedEncKey == null);
     } catch (e) {
       authState.value = AuthError(error: e.toString());
     }
@@ -74,9 +78,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
+  Stream<AuthState> setKeyInComplete() async* {
+    await _authUseCase.deleteUser();
+  }
+
   isLoggedIn() {
     if (_authUseCase.isLoggedIn()) {
-      authState.value = LoggedIn();
+      authState.value = LoggedIn(didnotCompleteSignup: false);
       print("koko logged in");
     } else {
       print("koko not logged in ");

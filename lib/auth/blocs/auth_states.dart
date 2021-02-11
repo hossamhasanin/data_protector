@@ -7,7 +7,10 @@ class AuthState extends Equatable {
 
 class InitAuth extends AuthState {}
 
-class LoggedIn extends AuthState {}
+class LoggedIn extends AuthState {
+  bool didnotCompleteSignup;
+  LoggedIn({this.didnotCompleteSignup});
+}
 
 class SignedUp extends AuthState {}
 

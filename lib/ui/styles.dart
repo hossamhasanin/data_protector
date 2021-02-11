@@ -20,3 +20,6 @@ const detailsSubTitleTextStyle =
     TextStyle(color: Colors.black, fontWeight: FontWeight.w500, fontSize: 22);
 const courseStyle =
     TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 20);
+
+const onBoardingTitleTextStyle =
+    TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 25);

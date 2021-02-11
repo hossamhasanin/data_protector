@@ -16,6 +16,7 @@ import 'package:get/get.dart';
 import 'package:photo/photo.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:data_protector/util/helper_functions.dart';
+import 'package:data_protector/aboutus/AboutUsWidget.dart';
 
 class EncryptedImagesWidget extends StatefulWidget {
   @override
@@ -31,7 +32,8 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
 
   static const List<IconData> icons = const [
     Icons.create_new_folder,
-    Icons.add_photo_alternate_outlined
+    Icons.add_photo_alternate_outlined,
+    Icons.file_download
   ];
 
   @override
@@ -50,6 +52,9 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     watchDecryptState();
     watchLogOutState();
     watchDeleteFolderState();
+    watchShareState();
+    watchImportFilesState();
+    watchDeleteFilesState();
 
     // Note : this part should have been seperate in its own function
     bloc.encryptState.listen((error) {
@@ -75,6 +80,14 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
       }
     });
 
+    bloc.errorWhileDisplayingImage.listen((isError) {
+      if (isError) {
+        Get.snackbar(
+            "Error !", "Some files couldn't get decrypted by the current key",
+            colorText: Colors.white, backgroundColor: Colors.red);
+      }
+    });
+
     bloc.add(GetStoredFiles(path: "/", clearTheList: false));
   }
 
@@ -90,60 +103,6 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     Color foregroundColor = Theme.of(context).accentColor;
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text("Protect your data"),
-      //   centerTitle: true,
-      //   automaticallyImplyLeading: false,
-      // leading: bloc.dir.value != "/" ? IconButton(
-      //   icon: Icon(Icons.arrow_back),
-      //   onPressed: (){
-      //     var paths = bloc.dir.value.split("/").toList();
-      //     paths.removeLast();
-      //     bloc.dir.value = paths.last == "protected" ? "/" : paths.join("/");
-      //     bloc.add(GetStoredFiles(path: bloc.dir.value , clearTheList: true));
-      //   },
-      // ) : null,
-      // actions: bloc.isImageSelecting.value ? [
-      //   IconButton(icon: Icon(Icons.lock_open), onPressed: (){
-      //     // decrypt the selected images
-      //     bloc.add(DecryptImages());
-      //   }) ,
-      //   IconButton(icon: Icon(Icons.close), onPressed: (){
-      //     bloc.isImageSelecting.value = false;
-      //     bloc.selectedImages.value = List();
-      //   })
-      // ] : bloc.isFolderSelecting.value ? [
-      //   IconButton(icon: Icon(Icons.delete), onPressed: (){
-      //     bloc.add(DeleteFolders(folders: bloc.selectedFolder.value));
-      //     bloc.isFolderSelecting.value = false;
-      //     bloc.selectedFolder.value = List();
-      //   }) ,
-      //   IconButton(icon: Icon(Icons.close), onPressed: (){
-      //     bloc.isFolderSelecting.value = false;
-      //     bloc.selectedFolder.value = List();
-      //   })
-      // ]: [
-      //   PopupMenuButton<String>(
-      //     onSelected: (String choice){
-      //       switch (choice) {
-      //         case 'Logout':
-      //           bloc.add(LogOut());
-      //           break;
-      //         case 'Settings':
-      //           break;
-      //       }
-      //     },
-      //     itemBuilder: (BuildContext context) {
-      //       return {'Logout', 'Settings'}.map((String choice) {
-      //         return PopupMenuItem<String>(
-      //           value: choice,
-      //           child: Text(choice),
-      //         );
-      //       }).toList();
-      //     },
-      //   ),
-      // ],
-      // ),
       floatingActionButton: animatedFloatingActionButtons(
           _floatingButtonController, icons, backgroundColor, foregroundColor, [
         // create folder
@@ -153,6 +112,10 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
         // encrypt image
         () {
           loadAssets();
+        },
+        // import encrypted files to the app
+        () {
+          bloc.add(ImportEncFiles());
         }
       ]),
       backgroundColor: Colors.blue,
@@ -243,71 +206,130 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     );
   }
 
-  Row buildMenuesRow() {
-    return Row(
-      children: bloc.isImageSelecting.value
-          ? [
-              IconButton(
-                  icon: Icon(
-                    Icons.lock_open,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    // decrypt the selected images
-                    bloc.add(DecryptImages());
-                    bloc.isImageSelecting.value = false;
-                  }),
-              IconButton(
-                  icon: Icon(
-                    Icons.close,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    bloc.isImageSelecting.value = false;
-                    bloc.selectedImages.value = List();
-                  })
-            ]
-          : bloc.isFolderSelecting.value
+  Widget buildMenuesRow() {
+    return Column(
+      children: [
+        Row(
+          children: bloc.isImageSelecting.value
               ? [
                   IconButton(
-                      icon: Icon(Icons.delete, color: Colors.white),
+                      icon: Icon(
+                        Icons.lock_open,
+                        color: Colors.white,
+                      ),
                       onPressed: () {
-                        bloc.add(
-                            DeleteFolders(folders: bloc.selectedFolder.value));
-                        bloc.isFolderSelecting.value = false;
-                        bloc.selectedFolder.value = List();
+                        // decrypt the selected images
+                        bloc.add(DecryptImages());
+                        bloc.isImageSelecting.value = false;
                       }),
                   IconButton(
-                      icon: Icon(Icons.close, color: Colors.white),
+                      icon: Icon(
+                        Icons.close,
+                        color: Colors.white,
+                      ),
                       onPressed: () {
-                        bloc.isFolderSelecting.value = false;
-                        bloc.selectedFolder.value = List();
+                        bloc.isImageSelecting.value = false;
+                        bloc.selectedImages.value = List();
                       })
                 ]
-              : [
-                  PopupMenuButton<String>(
-                      onSelected: (String choice) {
-                        switch (choice) {
-                          case 'Logout':
-                            bloc.add(LogOut());
-                            break;
-                          case 'Settings':
-                            break;
-                        }
-                      },
-                      itemBuilder: (BuildContext context) {
-                        return {'Logout', 'Settings'}.map((String choice) {
-                          return PopupMenuItem<String>(
-                            value: choice,
-                            child: Text(choice),
-                          );
-                        }).toList();
-                      },
+              : bloc.isFolderSelecting.value
+                  ? [
+                      IconButton(
+                          icon: Icon(Icons.delete, color: Colors.white),
+                          onPressed: () {
+                            bloc.add(DeleteFolders(
+                                folders: bloc.selectedFolder.value));
+                            bloc.isFolderSelecting.value = false;
+                            bloc.selectedFolder.value = List();
+                          }),
+                      IconButton(
+                          icon: Icon(Icons.close, color: Colors.white),
+                          onPressed: () {
+                            bloc.isFolderSelecting.value = false;
+                            bloc.selectedFolder.value = List();
+                          })
+                    ]
+                  : [
+                      PopupMenuButton<String>(
+                          onSelected: (String choice) {
+                            switch (choice) {
+                              case 'Logout':
+                                bloc.add(LogOut());
+                                break;
+                              case 'About us':
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => AboutUs()));
+                                break;
+                            }
+                          },
+                          itemBuilder: (BuildContext context) {
+                            return {'Logout', 'About us'}.map((String choice) {
+                              return PopupMenuItem<String>(
+                                value: choice,
+                                child: Text(choice),
+                              );
+                            }).toList();
+                          },
+                          icon: Icon(
+                            Icons.more_vert,
+                            color: Colors.white,
+                          )),
+                    ],
+        ),
+        bloc.isImageSelecting.value
+            ? Row(
+                children: [
+                  IconButton(
                       icon: Icon(
-                        Icons.more_vert,
+                        Icons.share,
                         color: Colors.white,
-                      )),
+                      ),
+                      onPressed: () {
+                        AwesomeDialog(
+                            context: context,
+                            title: "Note !",
+                            dialogType: DialogType.INFO,
+                            desc:
+                                "Now you will share the encrypted virsion of your images"
+                                " to be able to decrypt them on the oher device please use"
+                                " the app with the same email that has the same encryption"
+                                " key to be able to open them ,"
+                                "  you will find the files has extension "
+                                "(.hg) at the end of the file",
+                            btnOkColor: Colors.green,
+                            btnOkOnPress: () {
+                              bloc.add(ShareImages());
+                            },
+                            btnCancelColor: Colors.red,
+                            btnCancelOnPress: () {})
+                          ..show();
+                      }),
+                  IconButton(
+                      icon: Icon(
+                        Icons.delete,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        var d = AwesomeDialog(
+                            context: context,
+                            title: "Warning !",
+                            dialogType: DialogType.WARNING,
+                            desc: "Be noticed that if you deleted those images"
+                                " it will be deleted permenantly so are you sure you want so ?",
+                            btnOkColor: Colors.green,
+                            btnCancelColor: Colors.red,
+                            btnOkOnPress: () {
+                              bloc.add(DeleteFiles());
+                            },
+                            btnCancelOnPress: () {})
+                          ..show();
+                      })
                 ],
+              )
+            : Container()
+      ],
     );
   }
 
@@ -363,10 +385,10 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
             itemCount: state.images.length,
             itemBuilder: (context, index) {
               var file = state.images[index];
-              if (file.file.type == FileType.FOLDER.index) {
+              if (file.file.type == SavedFileType.FOLDER.index) {
                 print("paths > ${file.file.name} ,  ${file.file.path}");
                 return buildFolderCard(file);
-              } else if (file.file.type == FileType.IMAGE.index) {
+              } else if (file.file.type == SavedFileType.IMAGE.index) {
                 return buildImageCard(file);
               } else {
                 throw Exception("No matched file type");
@@ -502,6 +524,41 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     });
   }
 
+  watchShareState() {
+    bloc.shareImagesState.listen((state) {
+      print("koko > " + state.toString());
+      if (state is SharingImage) {
+        Get.snackbar("Sharing", "opening the share ...");
+      } else if (state is SharedImagesSuccessFully) {
+        Get.snackbar("Done !", "Images shared successfully");
+      } else if (state is ShareImagesFailed) {
+        Get.defaultDialog(
+            title: "Error !!",
+            content: Padding(
+                padding: EdgeInsets.all(20.0), child: Text(state.error)),
+            backgroundColor: Colors.white);
+      }
+    });
+  }
+
+  watchImportFilesState() {
+    bloc.importEncFilesState.listen((state) {
+      print("koko > " + state.toString());
+      if (state is ImportingEncFiles) {
+        Get.snackbar("Opening", "Open file system");
+      } else if (state is ImportedEncFilesSuccessFully) {
+        Get.snackbar("New files !", "Imported the new files successfully");
+      } else if (state is ImportEncFilesFailed) {
+        Get.defaultDialog(
+            title: "Folders Error",
+            content: Padding(
+                padding: EdgeInsets.all(20.0), child: Text(state.error)),
+            backgroundColor: Colors.white);
+        printError(info: state.error);
+      }
+    });
+  }
+
   watchDecryptState() {
     bloc.decryptState.listen((state) {
       print("koko > " + state.toString());
@@ -538,6 +595,20 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
         Get.snackbar("Delete Folders", "Deleted folders successfully");
       } else if (state is DeleteFolderFailed) {
         Get.snackbar("Delete Folders", "Error happened while Deleting !");
+        printError(info: state.error);
+      }
+    });
+  }
+
+  watchDeleteFilesState() {
+    bloc.deleteFilesState.listen((state) {
+      print("koko > " + state.toString());
+      if (state is DeletingFiles) {
+        Get.snackbar("Wait", "Deleting those files now");
+      } else if (state is DeleteFilesSuccessFully) {
+        Get.snackbar("Done", "Deleted files successfully");
+      } else if (state is DeleteFilesFailed) {
+        Get.snackbar("Failes", "Error happened while Deleting !");
         printError(info: state.error);
       }
     });

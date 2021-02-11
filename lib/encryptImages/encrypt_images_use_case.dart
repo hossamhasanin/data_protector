@@ -12,10 +12,12 @@ import 'package:base/models/user.dart';
 import 'package:data_protector/encryptImages/wrappers/GetImagesStreamWrapper.dart';
 import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
 import 'package:data_protector/ui/UiHelpers.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:base/Constants.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:share/share.dart';
 
 class EnnryptImagesUseCase {
   Database dataScource;
@@ -41,11 +43,11 @@ class EnnryptImagesUseCase {
         var decImageFile = null;
         try {
           //
-          if (file.type == FileType.IMAGE.index) {
+          if (file.type == SavedFileType.IMAGE.index) {
             var encImageFile =
                 new File(file.path + "/" + file.name).readAsBytesSync();
             decImageFile = encrypting.decrypt(encImageFile, key);
-          } else if (file.type == FileType.FOLDER.index) {
+          } else if (file.type == SavedFileType.FOLDER.index) {
             var isFolderExist = await Directory(path).exists();
             if (!isFolderExist)
               throw FileSystemException(
@@ -72,7 +74,10 @@ class EnnryptImagesUseCase {
           // form the database then return to continue the rest of the loop
 
           GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
-              images: readyToLoad, done: false, empty: false, error: e);
+              images: readyToLoad,
+              done: false,
+              empty: false,
+              error: e.toString());
           yield imagesStreamWrapper;
           readyToLoad.clear();
 
@@ -102,17 +107,9 @@ class EnnryptImagesUseCase {
     String key = await _getEncKey();
     List<F.File> files = [];
     for (var image in images) {
-      var dateTime = DateTime.now().toUtc().toIso8601String();
-      var fileName = "$dateTime.hg";
-      var filePath = "$path/$fileName";
-      var file = F.File(
-          name: fileName, id: dateTime, path: path, type: FileType.IMAGE.index);
-      files.add(file);
-
       var encrypted = encrypting.encrypt(image, key);
 
-      await _saveImage(encrypted.bytes, filePath);
-      await dataScource.addOrUpdateFile(file);
+      await _saveFileOnTheApp(path, encrypted.bytes);
     }
     print("koko > save files " + files.length.toString());
     //await dataScource.addFiles(files);
@@ -128,7 +125,7 @@ class EnnryptImagesUseCase {
         name: name,
         id: dateTime,
         path: curretntPath,
-        type: FileType.FOLDER.index);
+        type: SavedFileType.FOLDER.index);
     return await dataScource.addOrUpdateFile(file);
   }
 
@@ -192,6 +189,51 @@ class EnnryptImagesUseCase {
       return Future.error(
           "Error while deleting ${scopedFolder.file.name} it appears "
           "that it doesn't exit on the phone any more");
+    }
+  }
+
+  Future shareImages(List<String> images) {
+    return Share.shareFiles(images);
+  }
+
+  Future importEncryptedFiles(String path) async {
+    FilePickerResult result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.custom,
+      allowedExtensions: ['hg'],
+    );
+
+    if (result != null) {
+      List<File> files = result.paths.map((path) => File(path)).toList();
+      print("koko picked enc file > " + files[0].path);
+
+      for (var enc in files) {
+        var bytes = await enc.readAsBytes();
+        await _saveFileOnTheApp(path, bytes);
+      }
+    } else {
+      // User canceled the picker
+    }
+  }
+
+  Future _saveFileOnTheApp(String path, Uint8List bytes) async {
+    var dateTime = DateTime.now().toUtc().toIso8601String();
+    var fileName = "$dateTime.hg";
+    var filePath = "$path/$fileName";
+    var file = F.File(
+        name: fileName,
+        id: dateTime,
+        path: path,
+        type: SavedFileType.IMAGE.index);
+
+    await _saveImage(bytes, filePath);
+    await dataScource.addOrUpdateFile(file);
+  }
+
+  Future deleteFiles(List<FileWrapper> files) async {
+    for (var file in files) {
+      await _deleteFile(file.file.path + "/" + file.file.name);
+      await dataScource.deleteFile(file.file);
     }
   }
 
