@@ -18,9 +18,10 @@ class GetStoredFiles extends EncryptEvent {
 
 class EncryptImages extends EncryptEvent {
   List<Uint8List> images;
-  EncryptImages({this.images});
+  List<Uint8List> thumbs;
+  EncryptImages({this.images, this.thumbs});
   @override
-  List<Object> get props => [images];
+  List<Object> get props => [images, thumbs];
 }
 
 class DecryptImages extends EncryptEvent {}

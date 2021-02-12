@@ -23,9 +23,14 @@ String exctractCurrentFolderName(String name) {
 Future<File> deleteFile(String fileName) async {
   var permission = Permission.storage;
   if (await permission.status.isGranted) {
-    return new File(fileName)..delete();
+    var file = new File(fileName);
+    return file.existsSync() ? file.delete() : throw "File $fileName not found";
   } else {
     await permission.request();
     return deleteFile(fileName);
   }
+}
+
+String getThumbName(String fileName) {
+  return "${fileName.split(".hg")[0]}_thumb.hg";
 }

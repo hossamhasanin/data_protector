@@ -24,6 +24,12 @@ import 'package:share/share.dart';
 import 'package:stream_channel/isolate_channel.dart';
 import 'package:data_protector/util/helper_functions.dart';
 
+class Ts {
+  File f;
+  bool b;
+  Ts({this.f, this.b});
+}
+
 _loadEncFile(List<Object> l) async {
   SendPort statePort = l[0];
   String path = l[1];
@@ -40,21 +46,38 @@ _loadEncFile(List<Object> l) async {
   if (files.isNotEmpty) {
     for (var i = 0; i <= files.length - 1; i++) {
       var file = files[i];
-      var decImageFile = null;
+      var decImageFile;
+      var decThumbFile;
       try {
         //
         if (file.type == SavedFileType.IMAGE.index) {
           var encImageFile =
-              new File(file.path + "/" + file.name).readAsBytesSync();
+              new File("${file.path}/${file.name}").readAsBytesSync();
+
           decImageFile = encrypting.decrypt(encImageFile, key);
 
-          // Read a jpeg image from file.
-          // var image = decodeImage(decImageFile);
+          var thumbName = getThumbName(file.name as String);
+          var encThumbFile = new File(file.path + "/" + thumbName);
+          if (encThumbFile.existsSync()) {
+            print("koko thumb image exists");
 
-          //print("koko jj" + image.getBytes().toString());
-          // // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
-          // decImageFile = copyResize(image, width: 20, height: 20);
-          // decImageFile = Uint8List.fromList(encodeJpg(image, quality: 10));
+            decThumbFile =
+                encrypting.decrypt(encThumbFile.readAsBytesSync(), key);
+          } else {
+            print("koko thumb with name $thumbName not seen");
+            Image image = decodeImage(decImageFile);
+
+            // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
+            Image thumbnail = copyResize(image, width: THUMB_SIZE);
+
+            decThumbFile = encodePng(thumbnail);
+            var encryptThumb = encrypting.encrypt(decThumbFile, key);
+
+            // Save the thumbnail as a PNG.
+            new File(file.path + "/" + thumbName)
+              ..writeAsBytesSync(encryptThumb.bytes);
+            print("koko made your thumb file go and see it ");
+          }
         } else if (file.type == SavedFileType.FOLDER.index) {
           var isFolderExist = await Directory(path).exists();
           if (!isFolderExist)
@@ -62,8 +85,8 @@ _loadEncFile(List<Object> l) async {
                 "'${file.name}' folder does not exist anymore");
         }
 
-        FileWrapper readyFile =
-            FileWrapper(file: file, uint8list: decImageFile);
+        FileWrapper readyFile = FileWrapper(
+            file: file, uint8list: decImageFile, thumbUint8list: decThumbFile);
 
         readyToLoad.add(readyFile);
 
@@ -91,7 +114,6 @@ _loadEncFile(List<Object> l) async {
         state.sink.add(imagesStreamWrapper);
         readyToLoad.clear();
 
-        await deleteFile(file.file.path + "/" + file.file.name);
         deletingFilesChannel.sink.add(file);
 
         print("koko error loading the images > " + e.toString());
@@ -128,9 +150,14 @@ class EnnryptImagesUseCase {
 
     deletingFilesChannel.stream.listen((file) async {
       if (file != null) {
+        var fileName = "${file.path}/${file.name}";
         await dataScource.deleteFile(file).whenComplete(() {
           print("koko > deleted " + file.id);
         });
+        await deleteFile(fileName);
+        if (File(file.path + "/" + getThumbName(file.name)).existsSync()) {
+          await deleteFile(getThumbName(fileName));
+        }
       }
       deletingRecievePort.close();
     });
@@ -153,15 +180,18 @@ class EnnryptImagesUseCase {
     return authDataSource.getEncryptionKey();
   }
 
-  Future<Exception> encryptImages(List<Uint8List> images, String path) async {
+  Future<Exception> encryptImages(
+      List<Uint8List> images, List<Uint8List> thumbs, String path) async {
     String key = await _getEncKey();
-    List<F.File> files = [];
+    var i = 0;
     for (var image in images) {
       var encrypted = encrypting.encrypt(image, key);
+      var encryptedThumb = encrypting.encrypt(thumbs[i], key);
 
-      await _saveFileOnTheApp(path, encrypted.bytes);
+      await _saveFileOnTheApp(path, encrypted.bytes,
+          thumb: encryptedThumb.bytes);
+      i++;
     }
-    print("koko > save files " + files.length.toString());
     //await dataScource.addFiles(files);
   }
 
@@ -182,7 +212,7 @@ class EnnryptImagesUseCase {
   Future<File> _saveImage(Uint8List image, String fileName) async {
     var permission = Permission.storage;
     if (await permission.status.isGranted) {
-      return new File(fileName)..writeAsBytesSync(image);
+      return new File(fileName).writeAsBytes(image);
     } else {
       await permission.request();
       return _saveImage(image, fileName);
@@ -195,10 +225,17 @@ class EnnryptImagesUseCase {
         await new Directory('${dir.path}/decrypted').create(recursive: true);
     try {
       for (FileWrapper image in images) {
-        var name = image.file.name.replaceAll(".hg", ".jpg");
+        var name = image.file.name.replaceAll(".$ENC_EXTENSION", ".jpg");
         await _saveImage(image.uint8list, "${decryptedImagesPath.path}/$name");
         await PhotoManager.editor.saveImage(image.uint8list, title: name);
         await deleteFile(image.file.path + "/" + image.file.name);
+
+        if (File(image.file.path + "/" + getThumbName(image.file.name))
+            .existsSync()) {
+          await deleteFile(
+              image.file.path + "/" + getThumbName(image.file.name));
+        }
+
         await dataScource.deleteFile(image.file);
       }
     } catch (e) {
@@ -240,31 +277,56 @@ class EnnryptImagesUseCase {
     FilePickerResult result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
-      allowedExtensions: ['hg'],
+      allowedExtensions: [ENC_EXTENSION],
     );
 
     if (result != null) {
       List<File> files = result.paths.map((path) => File(path)).toList();
-      print("koko picked enc file > " + files[0].path);
-
+      print("koko picked enc file > " + result.files[0].name);
+      var i = 0;
+      var notFoundAnyFile = true;
       for (var enc in files) {
-        var bytes = await enc.readAsBytes();
-        await _saveFileOnTheApp(path, bytes);
+        if (result.files[i].name.contains(ENC_EXTENSION) ||
+            result.files[i].extension == ENC_EXTENSION) {
+          var bytes = enc.readAsBytesSync();
+          await _saveFileOnTheApp(path, bytes, fileName: result.files[i].name);
+          notFoundAnyFile = false;
+        }
+        i++;
+      }
+      if (notFoundAnyFile) {
+        throw "No file imported";
       }
     } else {
       // User canceled the picker
+      throw "No file imported";
     }
   }
 
-  Future _saveFileOnTheApp(String path, Uint8List bytes) async {
-    var dateTime = DateTime.now().toUtc().toIso8601String();
-    var fileName = "$dateTime.hg";
-    var filePath = "$path/$fileName";
+  Future _saveFileOnTheApp(String path, Uint8List bytes,
+      {Uint8List thumb, String fileName}) async {
+    var dateTime = DateTime.now()
+        .toUtc()
+        .toIso8601String()
+        .replaceAll("-", "_")
+        .replaceAll(":", "_");
+
+    var _fileName = fileName == null || fileName.isEmpty
+        ? "$dateTime.$ENC_EXTENSION"
+        : fileName;
+
+    var filePath = "$path/$_fileName";
     var file = F.File(
-        name: fileName,
+        name: _fileName,
         id: dateTime,
         path: path,
         type: SavedFileType.IMAGE.index);
+
+    if (thumb != null) {
+      var thumbName = "${dateTime}$THUMB_FILE_ENC_EXTENSION.$ENC_EXTENSION";
+      var thumbPath = "$path/$thumbName";
+      await _saveImage(thumb, thumbPath);
+    }
 
     await _saveImage(bytes, filePath);
     await dataScource.addOrUpdateFile(file);
@@ -272,8 +334,16 @@ class EnnryptImagesUseCase {
 
   Future deleteFiles(List<FileWrapper> files) async {
     for (var file in files) {
-      await deleteFile(file.file.path + "/" + file.file.name);
-      await dataScource.deleteFile(file.file);
+      try {
+        await deleteFile(file.file.path + "/" + file.file.name);
+        if (File(file.file.path + "/" + getThumbName(file.file.name))
+            .existsSync()) {
+          await deleteFile(file.file.path + "/" + getThumbName(file.file.name));
+        }
+        await dataScource.deleteFile(file.file);
+      } catch (e) {
+        continue;
+      }
     }
   }
 

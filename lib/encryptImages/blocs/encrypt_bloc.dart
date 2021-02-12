@@ -8,6 +8,7 @@ import 'package:data_protector/encryptImages/blocs/encrypt_states.dart';
 import 'package:data_protector/encryptImages/encrypt_images_use_case.dart';
 import 'package:data_protector/encryptImages/wrappers/GetImagesStreamWrapper.dart';
 import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
+import 'package:data_protector/util/helper_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
@@ -171,12 +172,13 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
     try {
       var path = await _providePath();
       print("koko > enc path $path");
-      await useCase.encryptImages(event.images, path);
+      await useCase.encryptImages(event.images, event.thumbs, path);
       encryptState.value = null;
       add(GetStoredFiles(path: dir.value, clearTheList: true));
     } catch (e) {
-      encryptState.value = e;
       print("koko > enc error : " + e.toString());
+
+      encryptState.value = e;
     }
   }
 
@@ -217,8 +219,9 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
   Stream<EncryptState> _shareImages() async* {
     try {
       shareImagesState.value = SharingImage();
-      await useCase.shareImages(
-          selectedImages.map((im) => im.file.path + im.file.name).toList());
+      await useCase.shareImages(selectedImages
+          .map((file) => file.file.path + "/" + file.file.name)
+          .toList());
       shareImagesState.value = SharedImagesSuccessFully();
     } catch (e) {
       shareImagesState.value =

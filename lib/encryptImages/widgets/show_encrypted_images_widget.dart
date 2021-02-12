@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:base/Constants.dart';
 import 'package:data_protector/auth/widgets/LoginPage.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_bloc.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_events.dart';
@@ -291,7 +292,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                                 " the app with the same email that has the same encryption"
                                 " key to be able to open them ,"
                                 "  you will find the files has extension "
-                                "(.hg) at the end of the file",
+                                "(.$ENC_EXTENSION) at the end of the file",
                             btnOkColor: Colors.green,
                             btnOkOnPress: () {
                               bloc.add(ShareImages());
@@ -382,9 +383,9 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
               child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
-                      mainAxisSpacing: 10.0,
-                      crossAxisSpacing: 10.0),
-                  semanticChildCount: 3,
+                      mainAxisSpacing: 5.0,
+                      crossAxisSpacing: 5.0),
+                  //semanticChildCount: state.images.length,
                   itemCount: state.images.length,
                   itemBuilder: (context, index) {
                     var file = state.images[index];
@@ -452,6 +453,8 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                                 }
                               }
                             } else {
+                              print("len > open photo name >" +
+                                  file.thumbUint8list.lengthInBytes.toString());
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -717,7 +720,8 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
       context: context,
       provider: I18nProvider.english,
       pickType: type,
-
+      thumbSize: THUMB_SIZE,
+      maxSelected: MAX_SELECTED_IMAGES,
       photoPathList: pathList,
     );
 
@@ -731,6 +735,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
 
   Future<void> loadAssets() async {
     List<Uint8List> resultList = [];
+    List<Uint8List> thumbtList = [];
 
     try {
       var assetPathList =
@@ -739,11 +744,16 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
           await _pickAsset(PickType.onlyImage, pathList: assetPathList);
       if (picked != null) {
         for (var image in picked) {
+          var thumb = await image.thumbDataWithSize(64, 64);
+
           var origin = await image.originBytes;
           resultList.add(origin);
+          thumbtList.add(thumb);
         }
-        print("koko > resultList " + resultList.length.toString());
-        bloc.add(EncryptImages(images: resultList));
+        print("len > resultList " + resultList[0].lengthInBytes.toString());
+        print("len > thums " + thumbtList[0].lengthInBytes.toString());
+
+        bloc.add(EncryptImages(images: resultList, thumbs: thumbtList));
       }
     } on Exception catch (e) {
       bloc.add(PickingImagesError(error: e.toString()));

@@ -30,33 +30,41 @@ class _ImageCardState extends State<ImageCard> {
     // print("koko select card > " + widget.isImageSelecting.value.toString());
     // print("koko select card contains > " +
     //     widget.selectedImages.contains(widget.image).toString());
-
+    print(
+        "thumb size > " + widget.image.thumbUint8list.lengthInBytes.toString());
     return GestureDetector(
         onLongPress: widget.onLongPress,
         onTap: () {
           widget.onTap.call();
-          setState(() {});
+          // setState(() {});
         },
-        child: Container(
-            padding: widget.selectedImages.contains(widget.image)
-                ? EdgeInsets.all(5.0)
-                : null,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.all(Radius.circular(10.0)),
-              color: widget.selectedImages.contains(widget.image)
-                  ? Colors.grey
-                  : null,
-            ),
-            child: Hero(
-              tag: widget.image.file.id,
-              child: Container(
-                  child: ClipRRect(
-                borderRadius: BorderRadius.circular(20.0),
-                child: Image.memory(
-                  widget.image.uint8list,
-                  fit: BoxFit.cover,
-                ),
+        child: Stack(children: [
+          Obx(() => widget.selectedImages.contains(widget.image)
+              ? Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  decoration: BoxDecoration(color: Colors.grey),
+                )
+              : Container()),
+          Container(
+              width: double.infinity,
+              height: double.infinity,
+              margin: EdgeInsets.all(5.0),
+              decoration: BoxDecoration(
+                color: Colors.grey,
+                borderRadius: BorderRadius.all(Radius.circular(20.0)),
+              ),
+              child: Hero(
+                tag: widget.image.file.id,
+                child: Container(
+                    child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20.0),
+                  child: Image.memory(
+                    widget.image.thumbUint8list,
+                    fit: BoxFit.cover,
+                  ),
+                )),
               )),
-            )));
+        ]));
   }
 }

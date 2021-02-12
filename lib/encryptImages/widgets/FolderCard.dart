@@ -32,31 +32,40 @@ class _FolderCardState extends State<FolderCard> {
         setState(() {});
       },
       onLongPress: widget.onLongPress,
-      child: Container(
-          color: widget.selectedFolder.contains(widget.folder)
-              ? Colors.grey
-              : null,
-          padding: widget.selectedFolder.contains(widget.folder)
-              ? EdgeInsets.all(5.0)
-              : null,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.folder,
-                color: Colors.blueAccent,
-                size: 46.0,
-              ),
-              SizedBox(
-                height: 10.0,
-              ),
-              Text(
-                widget.folder.file.name,
-                style: subTitleTextStyle,
-              )
-            ],
-          )),
+      child: Stack(
+        children: [
+          Obx(() => widget.selectedFolder.contains(widget.folder)
+              ? Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  decoration: BoxDecoration(color: Colors.grey),
+                )
+              : Container()),
+          Container(
+              width: double.infinity,
+              height: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.folder,
+                    color: Colors.blueAccent,
+                    size: 46.0,
+                  ),
+                  SizedBox(
+                    height: 10.0,
+                  ),
+                  Expanded(
+                    child: Text(
+                      widget.folder.file.name,
+                      style: subTitleTextStyle,
+                    ),
+                  )
+                ],
+              ))
+        ],
+      ),
     );
   }
 }

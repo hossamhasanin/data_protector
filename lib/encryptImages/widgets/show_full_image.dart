@@ -14,6 +14,9 @@ class ShowFullImage extends StatefulWidget {
 class _ShowFullImageState extends State<ShowFullImage> {
   @override
   Widget build(BuildContext context) {
+    print("len > open photo >" + widget.image.lengthInBytes.toString());
+    print("len > open photo name >" + widget.image.lengthInBytes.toString());
+
     return Scaffold(
       backgroundColor: Colors.black38,
       appBar: AppBar(

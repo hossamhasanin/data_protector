@@ -1,3 +1,4 @@
+import 'package:base/Constants.dart';
 import 'package:data_protector/ui/styles.dart';
 import 'package:flutter/material.dart';
 
@@ -32,7 +33,7 @@ class AboutUs extends StatelessWidget {
               SizedBox(height: 10.0),
               Text(
                 "This app is made to protect the files on device storage by encrypting them ,"
-                "it generates encrypted files the has extension of .hg , "
+                "it generates encrypted files the has extension of .$ENC_EXTENSION , "
                 " it doesn't share any encrypted file through any external sever , "
                 "Only uses the internet to login with some account and save your key on the server enables you "
                 "to have a portable account could open it on any device and use it to decrypt your data and that you don't have to write the encryption key by yourself every time",
