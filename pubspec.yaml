@@ -39,6 +39,9 @@ dependencies:
   share: ^0.6.5+4
   # file_picker_cross: ^4.2.8
   file_picker: ^2.1.6
+  stream_channel: ^2.0.0
+  image: ^2.1.19
+
   base:
     path: base
 

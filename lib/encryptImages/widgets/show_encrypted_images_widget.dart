@@ -5,6 +5,7 @@ import 'package:data_protector/auth/widgets/LoginPage.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_bloc.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_events.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_states.dart';
+import 'package:data_protector/encryptImages/widgets/FolderCard.dart';
 import 'package:data_protector/encryptImages/widgets/show_full_image.dart';
 import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
 import 'package:data_protector/ui/UiHelpers.dart';
@@ -17,6 +18,7 @@ import 'package:photo/photo.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:data_protector/util/helper_functions.dart';
 import 'package:data_protector/aboutus/AboutUsWidget.dart';
+import 'ImageCard.dart';
 
 class EncryptedImagesWidget extends StatefulWidget {
   @override
@@ -191,15 +193,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                 borderRadius: BorderRadius.only(
                     topRight: Radius.circular(30.0),
                     topLeft: Radius.circular(30.0))),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Obx(() => Text(
-                    "Your files : " + exctractCurrentFolderName(bloc.dir.value),
-                    style: titleTextStyle)),
-                mainContents()
-              ],
-            ),
+            child: mainContents(),
           ))
         ],
       ),
@@ -301,6 +295,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                             btnOkColor: Colors.green,
                             btnOkOnPress: () {
                               bloc.add(ShareImages());
+                              bloc.isImageSelecting.value = false;
                             },
                             btnCancelColor: Colors.red,
                             btnCancelOnPress: () {})
@@ -312,7 +307,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                         color: Colors.white,
                       ),
                       onPressed: () {
-                        var d = AwesomeDialog(
+                        AwesomeDialog(
                             context: context,
                             title: "Warning !",
                             dialogType: DialogType.WARNING,
@@ -322,6 +317,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                             btnCancelColor: Colors.red,
                             btnOkOnPress: () {
                               bloc.add(DeleteFiles());
+                              bloc.isImageSelecting.value = false;
                             },
                             btnCancelOnPress: () {})
                           ..show();
@@ -335,151 +331,227 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
 
   Widget mainContents() {
     double screeHeight = MediaQuery.of(context).size.height;
-    return BlocProvider(
-      create: (_) => bloc,
-      child: BlocBuilder<EncryptImagesBloc, EncryptState>(
-        builder: (context, state) {
-          if (state is GotImages) {
-            if (state.images.isNotEmpty) {
-              return buildGridView(state);
-            } else {
-              return Container(
-                margin: EdgeInsets.only(top: screeHeight / 3),
-                child: Center(
-                  child: Text("No Encrypted Images Yet ."),
-                ),
-              );
-            }
-          } else if (state is GettingImagesFailed) {
-            return Container(
-              margin: EdgeInsets.only(top: screeHeight / 3),
-              child: Center(
-                child: Text(state.error),
-              ),
-            );
-          } else if (state is GettingImages) {
-            return Container(
-              margin: EdgeInsets.only(top: screeHeight / 3),
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          } else {
-            return Container();
-          }
-        },
-      ),
-    );
+    return Obx(() {
+      var state = bloc.getImagesState.value;
+      print("koko state is >" + state.toString());
+      if (state is GotImages) {
+        if (state.images.isNotEmpty) {
+          return buildGridView(state);
+        } else {
+          return Container(
+            margin: EdgeInsets.only(top: screeHeight / 5),
+            child: Center(
+              child: Text("No Encrypted Images Yet ."),
+            ),
+          );
+        }
+      } else if (state is GettingImagesFailed) {
+        return Container(
+          margin: EdgeInsets.only(top: screeHeight / 5),
+          child: Center(
+            child: Text(state.error),
+          ),
+        );
+      } else if (state is GettingImages) {
+        return Container(
+          margin: EdgeInsets.only(top: screeHeight / 5),
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      } else {
+        return Container();
+      }
+    });
   }
 
   Widget buildGridView(GotImages state) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 10.0,
-                crossAxisSpacing: 10.0),
-            semanticChildCount: 3,
-            itemCount: state.images.length,
-            itemBuilder: (context, index) {
-              var file = state.images[index];
-              if (file.file.type == SavedFileType.FOLDER.index) {
-                print("paths > ${file.file.name} ,  ${file.file.path}");
-                return buildFolderCard(file);
-              } else if (file.file.type == SavedFileType.IMAGE.index) {
-                return buildImageCard(file);
-              } else {
-                throw Exception("No matched file type");
-              }
-            }),
-      ),
+    var isFolderSelecting = bloc.isFolderSelecting;
+    var isImageSelecting = bloc.isImageSelecting;
+
+    print("koko select > " + isFolderSelecting.value.toString());
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Your files : " + exctractCurrentFolderName(bloc.dir.value),
+            style: titleTextStyle),
+        Expanded(
+          child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 10.0,
+                      crossAxisSpacing: 10.0),
+                  semanticChildCount: 3,
+                  itemCount: state.images.length,
+                  itemBuilder: (context, index) {
+                    var file = state.images[index];
+                    if (file.file.type == SavedFileType.FOLDER.index) {
+                      print("paths > ${file.file.name} ,  ${file.file.path}");
+                      //return buildFolderCard(file);
+                      return FolderCard(
+                        isFolderSelecting: isFolderSelecting,
+                        isImageSelecting: isImageSelecting,
+                        folder: file,
+                        selectedFolder: bloc.selectedFolder,
+                        onTap: () {
+                          if (!bloc.isImageSelecting.value &&
+                              !bloc.isFolderSelecting.value) {
+                            bloc.add(GetStoredFiles(
+                                path: file.file.path + "/" + file.file.name,
+                                clearTheList: true));
+                          } else {
+                            if (!bloc.isImageSelecting.value) {
+                              if (!bloc.selectedFolder.contains(file)) {
+                                bloc.selectedFolder.add(file);
+                              } else {
+                                bloc.selectedFolder.remove(file);
+                                if (bloc.selectedFolder.isEmpty) {
+                                  bloc.isFolderSelecting.value = false;
+                                }
+                              }
+                            }
+                          }
+                        },
+                        onLongPress: () {
+                          if (!bloc.isFolderSelecting.value &&
+                              !bloc.isImageSelecting.value) {
+                            bloc.isFolderSelecting.value = true;
+                            bloc.selectedFolder.add(file);
+                          }
+                        },
+                      );
+                    } else if (file.file.type == SavedFileType.IMAGE.index) {
+                      //return buildImageCard(file);
+                      return ImageCard(
+                          isFolderSelecting: isFolderSelecting,
+                          isImageSelecting: isImageSelecting,
+                          image: file,
+                          selectedImages: bloc.selectedImages,
+                          onLongPress: () {
+                            if (!bloc.isFolderSelecting.value &&
+                                !bloc.isImageSelecting.value) {
+                              bloc.isImageSelecting.value = true;
+                              bloc.selectedImages.add(file);
+                            }
+                          },
+                          onTap: () {
+                            if (bloc.isImageSelecting.value &&
+                                !bloc.isFolderSelecting.value) {
+                              if (!bloc.selectedImages.contains(file)) {
+                                bloc.selectedImages.add(file);
+                                print("koko add files > " +
+                                    bloc.selectedImages.value.length
+                                        .toString());
+                              } else {
+                                bloc.selectedImages.remove(file);
+                                if (bloc.selectedImages.isEmpty) {
+                                  bloc.isImageSelecting.value = false;
+                                }
+                              }
+                            } else {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => ShowFullImage(
+                                          image: file.uint8list)));
+                            }
+                          });
+                    } else {
+                      throw Exception("No matched file type");
+                    }
+                  })),
+        )
+      ],
     );
   }
 
   Widget buildImageCard(FileWrapper image) {
-    return Obx(() => GestureDetector(
-          onLongPress:
-              !bloc.isFolderSelecting.value && !bloc.isImageSelecting.value
-                  ? () {
-                      bloc.isImageSelecting.value = true;
-                      bloc.selectedImages.add(image);
-                    }
+    return GestureDetector(
+        onLongPress: () {
+          if (!bloc.isFolderSelecting.value && !bloc.isImageSelecting.value) {
+            bloc.isImageSelecting.value = true;
+            bloc.selectedImages.add(image);
+          }
+        },
+        onTap: () {
+          if (bloc.isImageSelecting.value && !bloc.isFolderSelecting.value) {
+            if (!bloc.selectedImages.contains(image)) {
+              bloc.selectedImages.add(image);
+            } else {
+              bloc.selectedImages.remove(image);
+              if (bloc.selectedImages.isEmpty) {
+                bloc.isImageSelecting.value = false;
+              }
+            }
+          } else {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        ShowFullImage(image: image.uint8list)));
+          }
+        },
+        child: Obx(() => Container(
+              padding: bloc.selectedImages.contains(image)
+                  ? EdgeInsets.all(5.0)
                   : null,
-          onTap: bloc.isImageSelecting.value && !bloc.isFolderSelecting.value
-              ? () {
-                  if (!bloc.selectedImages.contains(image)) {
-                    bloc.selectedImages.add(image);
-                  } else {
-                    bloc.selectedImages.remove(image);
-                    if (bloc.selectedImages.isEmpty) {
-                      bloc.isImageSelecting.value = false;
-                    }
-                  }
-                }
-              : () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              ShowFullImage(image: image.uint8list)));
-                },
-          child: Container(
-            padding: bloc.selectedImages.contains(image)
-                ? EdgeInsets.all(5.0)
-                : null,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.all(Radius.circular(10.0)),
-              color: bloc.selectedImages.contains(image) ? Colors.grey : null,
-            ),
-            child: Hero(
-              tag: image.file.id,
-              child: Container(
-                  decoration: BoxDecoration(
-                      image: DecorationImage(
-                          image: MemoryImage(image.uint8list),
-                          fit: BoxFit.cover),
-                      borderRadius: BorderRadius.circular(30.0),
-                      boxShadow: [
-                    BoxShadow(
-                        color: Colors.grey,
-                        blurRadius: 5.0,
-                        offset: Offset(0, 2))
-                  ])),
-            ),
-          ),
-        ));
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                color: bloc.selectedImages.contains(image) ? Colors.grey : null,
+              ),
+              child: bloc.isImageSelecting.value
+                  ? containerImageCard(image.uint8list)
+                  : putImageInHero(
+                      image.file.id, containerImageCard(image.uint8list)),
+            )));
+  }
+
+  Widget putImageInHero(String tag, Widget im) {
+    return Hero(
+      tag: tag,
+      child: im,
+    );
+  }
+
+  Widget containerImageCard(Uint8List im) {
+    return Container(
+        decoration: BoxDecoration(
+      image: DecorationImage(image: MemoryImage(im), fit: BoxFit.cover),
+      borderRadius: BorderRadius.circular(30.0),
+    ));
   }
 
   Widget buildFolderCard(FileWrapper folder) {
-    return Obx(() => InkWell(
-          onTap: !bloc.isImageSelecting.value && !bloc.isFolderSelecting.value
-              ? () {
-                  bloc.add(GetStoredFiles(
-                      path: folder.file.path + "/" + folder.file.name,
-                      clearTheList: true));
-                }
-              : () {
-                  if (!bloc.isImageSelecting.value) {
-                    if (!bloc.selectedFolder.contains(folder)) {
-                      bloc.selectedFolder.add(folder);
-                    } else {
-                      bloc.selectedFolder.remove(folder);
-                      if (bloc.selectedFolder.isEmpty) {
-                        bloc.isFolderSelecting.value = false;
-                      }
-                    }
-                  }
-                },
-          onLongPress:
-              !bloc.isFolderSelecting.value && !bloc.isImageSelecting.value
-                  ? () {
-                      bloc.isFolderSelecting.value = true;
-                      bloc.selectedFolder.add(folder);
-                    }
-                  : null,
-          child: Container(
+    return InkWell(
+      onTap: () {
+        if (!bloc.isImageSelecting.value && !bloc.isFolderSelecting.value) {
+          bloc.add(GetStoredFiles(
+              path: folder.file.path + "/" + folder.file.name,
+              clearTheList: true));
+        } else {
+          if (!bloc.isImageSelecting.value) {
+            if (!bloc.selectedFolder.contains(folder)) {
+              bloc.selectedFolder.add(folder);
+            } else {
+              bloc.selectedFolder.remove(folder);
+              if (bloc.selectedFolder.isEmpty) {
+                bloc.isFolderSelecting.value = false;
+              }
+            }
+          }
+        }
+      },
+      onLongPress: () {
+        if (!bloc.isFolderSelecting.value && !bloc.isImageSelecting.value) {
+          bloc.isFolderSelecting.value = true;
+          bloc.selectedFolder.add(folder);
+        }
+      },
+      child: Obx(
+        () => Container(
             color: bloc.selectedFolder.contains(folder) ? Colors.grey : null,
             padding: bloc.selectedFolder.contains(folder)
                 ? EdgeInsets.all(5.0)
@@ -501,9 +573,9 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                   style: subTitleTextStyle,
                 )
               ],
-            ),
-          ),
-        ));
+            )),
+      ),
+    );
   }
 
   watchCreateFolderState() {

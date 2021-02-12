@@ -75,9 +75,11 @@ class CreateNewFolderFailed extends CreateNewFolderState {
   List<Object> get props => [error];
 }
 
-class GettingImages extends EncryptState {}
+class GetImagesState {}
 
-class GotImages extends EncryptState {
+class GettingImages extends GetImagesState {}
+
+class GotImages extends GetImagesState {
   List<FileWrapper> images;
 
   GotImages({this.images});
@@ -87,7 +89,7 @@ class GotImages extends EncryptState {
   List<Object> get props => [images];
 }
 
-class GettingImagesFailed extends EncryptState {
+class GettingImagesFailed extends GetImagesState {
   String error;
   GettingImagesFailed({this.error});
   @override

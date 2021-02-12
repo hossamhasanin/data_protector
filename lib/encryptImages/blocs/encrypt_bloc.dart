@@ -1,19 +1,21 @@
 import 'dart:async';
+import 'dart:isolate';
 
 import 'package:base/datasource/File.dart';
 import 'package:base/models/user.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_events.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_states.dart';
 import 'package:data_protector/encryptImages/encrypt_images_use_case.dart';
+import 'package:data_protector/encryptImages/wrappers/GetImagesStreamWrapper.dart';
 import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:stream_channel/isolate_channel.dart';
 
 class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
   EnnryptImagesUseCase useCase;
-
-  StreamSubscription _imagesListener;
 
   RxBool isImageSelecting = false.obs;
 
@@ -34,13 +36,18 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
   Rx<ShareImageState> shareImagesState = ShareImageState().obs;
   Rx<ImportEncFilesState> importEncFilesState = ImportEncFilesState().obs;
   Rx<DeleteFilesState> deleteFilesState = DeleteFilesState().obs;
+  Rx<GetImagesState> getImagesState = GetImagesState().obs;
   // Note : this should have its own state classes too but i was a little lazy to write them
   // so just used quick solution :)
   Rx<Exception> encryptState = Exception().obs;
   RxBool errorWhileDisplayingImage = false.obs;
 
+  ReceivePort _getFilesRecievePort;
+  RxBool clearTheList = true.obs;
+
   Rx<User> user = User().obs;
 
+  Isolate _getFilesIsolate = null;
   EncryptImagesBloc({this.useCase}) : super(InitEncryptState()) {
     user.bindStream(useCase.userData());
   }
@@ -52,7 +59,8 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
     } else if (event is GetStoredFiles) {
       yield* _getFiles(event);
     } else if (event is GotImagesEvent) {
-      yield GotImages(images: event.images);
+      //yield GotImages(images: event.images);
+      getImagesState.value = GotImages(images: event.images);
     } else if (event is DecryptImages) {
       yield* _decryptImages();
     } else if (event is CreateNewFolder) {
@@ -79,37 +87,57 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
   // }
 
   Stream<EncryptState> _getFiles(GetStoredFiles event) async* {
+    if (_getFilesIsolate != null && _getFilesRecievePort != null) {
+      print("koko stop the isolate");
+      _getFilesIsolate.pause();
+      _getFilesRecievePort.close();
+      _getFilesIsolate.kill();
+      _getFilesRecievePort = null;
+      _getFilesIsolate = null;
+    }
     print("koko > load images");
-    if (_imagesListener != null) {
-      _imagesListener.cancel();
-    } else {
-      yield GettingImages();
-    }
-    List<FileWrapper> allImages = [];
-    if (state is GotImages && !event.clearTheList) {
-      allImages.addAll((state as GotImages).images);
-    }
+    getImagesState.value = GettingImages();
     var dir = await getExternalStorageDirectory();
     var path = event.path == "/" ? "${dir.path}" : event.path;
     print("koko path is > $path");
     if (event.path != "/") {
       this.dir.value = event.path;
     }
-    _imagesListener = useCase.getAllImages(path: path).listen((filesWrapper) {
+    clearTheList.value = event.clearTheList;
+    _getFilesRecievePort = ReceivePort();
+    _getFilesIsolate = await useCase.getAllImages(
+        path: path, receivePort: _getFilesRecievePort);
+
+    _getFilesStreamListener();
+  }
+
+  _getFilesStreamListener() {
+    var _getFilesChannel = IsolateChannel.connectReceive(_getFilesRecievePort);
+    List<FileWrapper> allImages = [];
+    _getFilesChannel.stream.listen((filesWrapper) {
+      if (clearTheList.value) {
+        allImages.clear();
+      }
+      print("koko isolate res > " + filesWrapper.toString());
       if (filesWrapper.images != null || filesWrapper.empty) {
+        clearTheList.value = false;
         print("koko >" + filesWrapper.images.length.toString());
         allImages.addAll(filesWrapper.images);
       } else if (filesWrapper.done) {
-        _imagesListener.cancel();
-        _imagesListener = null;
         print("koko > done");
+        if (_getFilesIsolate != null && _getFilesRecievePort != null) {
+          print("koko done stop the isolate");
+          _getFilesRecievePort.close();
+          _getFilesIsolate.kill();
+          _getFilesIsolate = null;
+          _getFilesRecievePort = null;
+        }
       }
 
       if (filesWrapper.error != null) {
         errorWhileDisplayingImage = true.obs;
       }
-
-      add(GotImagesEvent(images: allImages));
+      getImagesState.value = GotImages(images: allImages);
     });
   }
 

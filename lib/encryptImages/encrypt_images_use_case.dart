@@ -9,15 +9,104 @@ import 'package:base/datasource/File.dart' as F;
 import 'package:base/datasource/network/AuthDataSource.dart';
 import 'package:base/encrypt/encryption.dart';
 import 'package:base/models/user.dart';
+import 'package:data_protector/encryptImages/blocs/encrypt_states.dart';
 import 'package:data_protector/encryptImages/wrappers/GetImagesStreamWrapper.dart';
 import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
 import 'package:data_protector/ui/UiHelpers.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:get/get.dart';
+import 'package:image/image.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:base/Constants.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:share/share.dart';
+import 'package:stream_channel/isolate_channel.dart';
+import 'package:data_protector/util/helper_functions.dart';
+
+_loadEncFile(List<Object> l) async {
+  SendPort statePort = l[0];
+  String path = l[1];
+  String key = l[2];
+  List<FileWrapper> readyToLoad = [];
+  IsolateChannel state = IsolateChannel.connectSend(statePort);
+  SendPort deletingFilesPort = l[3];
+  List files = l[4];
+  Encrypt encrypting = l[5];
+  var deletingFilesChannel = IsolateChannel.connectSend(deletingFilesPort);
+
+  print("koko > all files in database is " + files.length.toString());
+  var c = 0;
+  if (files.isNotEmpty) {
+    for (var i = 0; i <= files.length - 1; i++) {
+      var file = files[i];
+      var decImageFile = null;
+      try {
+        //
+        if (file.type == SavedFileType.IMAGE.index) {
+          var encImageFile =
+              new File(file.path + "/" + file.name).readAsBytesSync();
+          decImageFile = encrypting.decrypt(encImageFile, key);
+
+          // Read a jpeg image from file.
+          // var image = decodeImage(decImageFile);
+
+          //print("koko jj" + image.getBytes().toString());
+          // // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
+          // decImageFile = copyResize(image, width: 20, height: 20);
+          // decImageFile = Uint8List.fromList(encodeJpg(image, quality: 10));
+        } else if (file.type == SavedFileType.FOLDER.index) {
+          var isFolderExist = await Directory(path).exists();
+          if (!isFolderExist)
+            throw FileSystemException(
+                "'${file.name}' folder does not exist anymore");
+        }
+
+        FileWrapper readyFile =
+            FileWrapper(file: file, uint8list: decImageFile);
+
+        readyToLoad.add(readyFile);
+
+        if (readyToLoad.length == FILES_PER_PROCESS || i == files.length - 1) {
+          c += 1;
+          GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
+              images: readyToLoad, done: false, empty: false, error: null);
+          // yield imagesStreamWrapper;
+          state.sink.add(imagesStreamWrapper);
+          readyToLoad.clear();
+          print("koko count > " + c.toString());
+          //sleep(Duration(milliseconds: 1000));
+        }
+      } catch (e) {
+        // if it crashed before the number of processed files complete
+        // i want it to load what has been ready and empty its load and delete the corupted file
+        // form the database then return to continue the rest of the loop
+        print("koko error loading the images > " + e.toString());
+
+        GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
+            images: readyToLoad,
+            done: false,
+            empty: false,
+            error: e.toString());
+        state.sink.add(imagesStreamWrapper);
+        readyToLoad.clear();
+
+        await deleteFile(file.file.path + "/" + file.file.name);
+        deletingFilesChannel.sink.add(file);
+
+        print("koko error loading the images > " + e.toString());
+        continue;
+      }
+    }
+    GetImagesStreamWrapper imagesStreamWrapper =
+        GetImagesStreamWrapper(images: null, done: true, empty: false);
+    state.sink.add(imagesStreamWrapper);
+  } else {
+    GetImagesStreamWrapper imagesStreamWrapper =
+        GetImagesStreamWrapper(images: [], done: false, empty: true);
+    state.sink.add(imagesStreamWrapper);
+  }
+}
 
 class EnnryptImagesUseCase {
   Database dataScource;
@@ -27,76 +116,37 @@ class EnnryptImagesUseCase {
   EnnryptImagesUseCase(
       {this.dataScource, this.encrypting, this.authDataSource});
 
-  Stream<GetImagesStreamWrapper> getAllImages({String path}) async* {
+  Future<Isolate> getAllImages({String path, ReceivePort receivePort}) async {
     await dataScource.initDatabase();
     String key = await _getEncKey();
     List<FileWrapper> readyToLoad = [];
     var files = await dataScource.getFiles(path);
-    // var k = await dataScource.k();
-    // print("koko > key " + k.toString());
+    var deletingRecievePort = ReceivePort();
 
-    print("koko > all files in database is " + files.length.toString());
-    var c = 0;
-    if (files.isNotEmpty) {
-      for (var i = 0; i <= files.length - 1; i++) {
-        var file = files[i];
-        var decImageFile = null;
-        try {
-          //
-          if (file.type == SavedFileType.IMAGE.index) {
-            var encImageFile =
-                new File(file.path + "/" + file.name).readAsBytesSync();
-            decImageFile = encrypting.decrypt(encImageFile, key);
-          } else if (file.type == SavedFileType.FOLDER.index) {
-            var isFolderExist = await Directory(path).exists();
-            if (!isFolderExist)
-              throw FileSystemException(
-                  "'${file.name}' folder does not exist anymore");
-          }
+    var deletingFilesChannel =
+        IsolateChannel.connectReceive(deletingRecievePort);
 
-          FileWrapper readyFile =
-              FileWrapper(file: file, uint8list: decImageFile);
-
-          readyToLoad.add(readyFile);
-
-          if (readyToLoad.length == FILES_PER_PROCESS ||
-              i == files.length - 1) {
-            c += 1;
-            GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
-                images: readyToLoad, done: false, empty: false, error: null);
-            yield imagesStreamWrapper;
-            readyToLoad.clear();
-            print("koko count > " + c.toString());
-          }
-        } catch (e) {
-          // if it crashed before the number of processed files complete
-          // i want it to load what has been ready and empty its load and delete the corupted file
-          // form the database then return to continue the rest of the loop
-
-          GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
-              images: readyToLoad,
-              done: false,
-              empty: false,
-              error: e.toString());
-          yield imagesStreamWrapper;
-          readyToLoad.clear();
-
-          await dataScource.deleteFile(file).whenComplete(() {
-            print("koko > deleted " + file.id);
-          });
-
-          print("koko error loading the images > " + e.toString());
-          continue;
-        }
+    deletingFilesChannel.stream.listen((file) async {
+      if (file != null) {
+        await dataScource.deleteFile(file).whenComplete(() {
+          print("koko > deleted " + file.id);
+        });
       }
-      GetImagesStreamWrapper imagesStreamWrapper =
-          GetImagesStreamWrapper(images: null, done: true, empty: false);
-      yield imagesStreamWrapper;
-    } else {
-      GetImagesStreamWrapper imagesStreamWrapper =
-          GetImagesStreamWrapper(images: [], done: false, empty: true);
-      yield imagesStreamWrapper;
-    }
+      deletingRecievePort.close();
+    });
+
+    final loadEncFileIsolate = await Isolate.spawn(
+      _loadEncFile,
+      [
+        receivePort.sendPort,
+        path,
+        key,
+        deletingRecievePort.sendPort,
+        files,
+        encrypting,
+      ],
+    );
+    return loadEncFileIsolate;
   }
 
   Future<String> _getEncKey() {
@@ -139,16 +189,6 @@ class EnnryptImagesUseCase {
     }
   }
 
-  Future<File> _deleteFile(String fileName) async {
-    var permission = Permission.storage;
-    if (await permission.status.isGranted) {
-      return new File(fileName)..delete();
-    } else {
-      await permission.request();
-      return _deleteFile(fileName);
-    }
-  }
-
   Future decryptImages(List<FileWrapper> images) async {
     var dir = await getExternalStorageDirectory();
     var decryptedImagesPath =
@@ -158,7 +198,7 @@ class EnnryptImagesUseCase {
         var name = image.file.name.replaceAll(".hg", ".jpg");
         await _saveImage(image.uint8list, "${decryptedImagesPath.path}/$name");
         await PhotoManager.editor.saveImage(image.uint8list, title: name);
-        await _deleteFile(image.file.path + "/" + image.file.name);
+        await deleteFile(image.file.path + "/" + image.file.name);
         await dataScource.deleteFile(image.file);
       }
     } catch (e) {
@@ -232,7 +272,7 @@ class EnnryptImagesUseCase {
 
   Future deleteFiles(List<FileWrapper> files) async {
     for (var file in files) {
-      await _deleteFile(file.file.path + "/" + file.file.name);
+      await deleteFile(file.file.path + "/" + file.file.name);
       await dataScource.deleteFile(file.file);
     }
   }
