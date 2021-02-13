@@ -8,7 +8,7 @@
             "name": "data_protector",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "debug"
+            "flutterMode": "release"
         },
         {
             "name": "base",

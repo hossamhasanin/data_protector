@@ -58,30 +58,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     watchShareState();
     watchImportFilesState();
     watchDeleteFilesState();
-
-    // Note : this part should have been seperate in its own function
-    bloc.encryptState.listen((error) {
-      print("came here");
-      if (error == null) {
-        AwesomeDialog(
-            context: context,
-            title: "Hey !",
-            dialogType: DialogType.INFO,
-            desc:
-                "Be aware that the original images hasn't been deleted from the gallery "
-                "so you should go and delete those images from your gallery first , "
-                "and dont worry the app now protect those images by encrypting them for you ")
-          ..show();
-      } else {
-        AwesomeDialog(
-            context: context,
-            dialogType: DialogType.WARNING,
-            animType: AnimType.SCALE,
-            title: "Failed !",
-            desc: error.toString())
-          ..show();
-      }
-    });
+    watchEncryptState();
 
     bloc.errorWhileDisplayingImage.listen((isError) {
       if (isError) {
@@ -630,6 +607,39 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                 padding: EdgeInsets.all(20.0), child: Text(state.error)),
             backgroundColor: Colors.white);
         printError(info: state.error);
+      }
+    });
+  }
+
+  watchEncryptState() {
+    bloc.encryptState.listen((state) {
+      print("came here");
+      if (state is EncryptDone) {
+        Navigator.pop(context);
+        AwesomeDialog(
+            context: context,
+            title: "Hey !",
+            dialogType: DialogType.INFO,
+            desc:
+                "Be aware that the original images hasn't been deleted from the gallery "
+                "so you should go and delete those images from your gallery first , "
+                "and dont worry the app now protect those images by encrypting them for you ")
+          ..show();
+      } else if (state is EncryptFailed) {
+        Navigator.pop(context);
+        AwesomeDialog(
+            context: context,
+            dialogType: DialogType.WARNING,
+            animType: AnimType.SCALE,
+            title: "Failed !",
+            desc: state.error)
+          ..show();
+      } else if (state is Encrypting) {
+        showCustomDialog(
+            context: context,
+            title: "Wait a bit ...",
+            children: [Center(child: CircularProgressIndicator())],
+            dissmissable: false);
       }
     });
   }

@@ -192,7 +192,6 @@ class EnnryptImagesUseCase {
           thumb: encryptedThumb.bytes);
       i++;
     }
-    //await dataScource.addFiles(files);
   }
 
   Future createNewFolder(String name, String curretntPath) async {

@@ -40,7 +40,7 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
   Rx<GetImagesState> getImagesState = GetImagesState().obs;
   // Note : this should have its own state classes too but i was a little lazy to write them
   // so just used quick solution :)
-  Rx<Exception> encryptState = Exception().obs;
+  Rx<EncryptState> encryptState = EncryptState().obs;
   RxBool errorWhileDisplayingImage = false.obs;
 
   ReceivePort _getFilesRecievePort;
@@ -170,15 +170,16 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
 
   Stream<EncryptState> _encryptImages(EncryptImages event) async* {
     try {
+      encryptState.value = Encrypting();
       var path = await _providePath();
       print("koko > enc path $path");
       await useCase.encryptImages(event.images, event.thumbs, path);
-      encryptState.value = null;
+      encryptState.value = EncryptDone();
       add(GetStoredFiles(path: dir.value, clearTheList: true));
     } catch (e) {
       print("koko > enc error : " + e.toString());
 
-      encryptState.value = e;
+      encryptState.value = EncryptFailed(error: "Error while encrypting");
     }
   }
 

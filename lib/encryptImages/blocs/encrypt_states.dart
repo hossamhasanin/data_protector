@@ -13,6 +13,8 @@ class InitEncryptState extends EncryptState {}
 
 class EncryptDone extends EncryptState {}
 
+class Encrypting extends EncryptState {}
+
 class EncryptFailed extends EncryptState {
   String error;
   EncryptFailed({this.error});
