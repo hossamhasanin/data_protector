@@ -2,15 +2,12 @@
 
 It encrypts the data for you on the device to keep it safe
 
-## Getting Started
+<img src="https://github.com/hossamhasanin/data_protector/blob/main/images/photo_2021-03-14_16-29-59.jpg" width="25%" height="25%"/>
 
-This project is a starting point for a Flutter application.
+<img src="https://github.com/hossamhasanin/data_protector/blob/main/images/photo_2021-03-14_16-31-11.jpg" width="25%" height="25%"/>
 
-A few resources to get you started if this is your first Flutter project:
+<img src="https://github.com/hossamhasanin/data_protector/blob/main/images/photo_2021-03-14_16-31-18.jpg" width="25%" height="25%"/>
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+<img src="https://github.com/hossamhasanin/data_protector/blob/main/images/photo_2021-03-14_16-31-25.jpg" width="25%" height="25%"/>
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+<img src="https://github.com/hossamhasanin/data_protector/blob/main/images/photo_2021-03-14_16-31-30.jpg" width="25%" height="25%"/>
