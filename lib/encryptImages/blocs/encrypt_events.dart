@@ -11,7 +11,7 @@ class EncryptEvent extends Equatable {
 class GetStoredFiles extends EncryptEvent {
   String path;
   bool clearTheList;
-  GetStoredFiles({this.path, this.clearTheList});
+  GetStoredFiles({required this.path, required this.clearTheList});
   @override
   List<Object> get props => [path, clearTheList];
 }
@@ -19,7 +19,7 @@ class GetStoredFiles extends EncryptEvent {
 class EncryptImages extends EncryptEvent {
   List<Uint8List> images;
   List<Uint8List> thumbs;
-  EncryptImages({this.images, this.thumbs});
+  EncryptImages({required this.images, required this.thumbs});
   @override
   List<Object> get props => [images, thumbs];
 }
@@ -28,7 +28,7 @@ class DecryptImages extends EncryptEvent {}
 
 class DeleteFolders extends EncryptEvent {
   List<FileWrapper> folders;
-  DeleteFolders({this.folders});
+  DeleteFolders({required this.folders});
   @override
   // TODO: implement props
   List<Object> get props => [folders];
@@ -36,14 +36,14 @@ class DeleteFolders extends EncryptEvent {
 
 class CreateNewFolder extends EncryptEvent {
   String name;
-  CreateNewFolder({this.name});
+  CreateNewFolder({required this.name});
   @override
   List<Object> get props => [name];
 }
 
 class PickingImagesError extends EncryptEvent {
   String error;
-  PickingImagesError({this.error});
+  PickingImagesError({required this.error});
   @override
   List<Object> get props => [error];
 }
@@ -51,7 +51,7 @@ class PickingImagesError extends EncryptEvent {
 class GotImagesEvent extends EncryptEvent {
   List<FileWrapper> images;
 
-  GotImagesEvent({this.images});
+  GotImagesEvent({required this.images});
 
   @override
   // TODO: implement props

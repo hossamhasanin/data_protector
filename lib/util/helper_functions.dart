@@ -20,7 +20,7 @@ String exctractCurrentFolderName(String name) {
   return name.split("/files").last;
 }
 
-Future<File> deleteFile(String fileName) async {
+Future deleteFile(String fileName) async {
   var permission = Permission.storage;
   if (await permission.status.isGranted) {
     var file = new File(fileName);

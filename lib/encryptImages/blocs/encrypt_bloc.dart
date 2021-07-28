@@ -16,7 +16,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:stream_channel/isolate_channel.dart';
 
 class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
-  EnnryptImagesUseCase useCase;
+  late EnnryptImagesUseCase useCase;
 
   RxBool isImageSelecting = false.obs;
 
@@ -24,9 +24,9 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
 
   RxString dir = "/".obs;
 
-  RxList<FileWrapper> selectedImages = List<FileWrapper>().obs;
+  RxList<FileWrapper> selectedImages = List<FileWrapper>.empty().obs;
 
-  RxList<FileWrapper> selectedFolder = List<FileWrapper>().obs;
+  RxList<FileWrapper> selectedFolder = List<FileWrapper>.empty().obs;
 
   // Note : Using diffrent states like that and diffrent streams i think it could have done better
   // if i put them as a property in single class and call it viewState for example
@@ -43,13 +43,13 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
   Rx<EncryptState> encryptState = EncryptState().obs;
   RxBool errorWhileDisplayingImage = false.obs;
 
-  ReceivePort _getFilesRecievePort;
+  ReceivePort? _getFilesRecievePort;
   RxBool clearTheList = true.obs;
 
-  Rx<User> user = User().obs;
+  Rx<User> user = User.init().obs;
 
-  Isolate _getFilesIsolate = null;
-  EncryptImagesBloc({this.useCase}) : super(InitEncryptState()) {
+  Isolate? _getFilesIsolate = null;
+  EncryptImagesBloc({required this.useCase}) : super(InitEncryptState()) {
     user.bindStream(useCase.userData());
   }
 
@@ -90,16 +90,16 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
   Stream<EncryptState> _getFiles(GetStoredFiles event) async* {
     if (_getFilesIsolate != null && _getFilesRecievePort != null) {
       print("koko stop the isolate");
-      _getFilesIsolate.pause();
-      _getFilesRecievePort.close();
-      _getFilesIsolate.kill();
+      _getFilesIsolate?.pause();
+      _getFilesRecievePort?.close();
+      _getFilesIsolate?.kill();
       _getFilesRecievePort = null;
       _getFilesIsolate = null;
     }
     print("koko > load images");
     getImagesState.value = GettingImages();
     var dir = await getExternalStorageDirectory();
-    var path = event.path == "/" ? "${dir.path}" : event.path;
+    var path = event.path == "/" ? "${dir!.path}" : event.path;
     print("koko path is > $path");
     if (event.path != "/") {
       this.dir.value = event.path;
@@ -107,13 +107,13 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
     clearTheList.value = event.clearTheList;
     _getFilesRecievePort = ReceivePort();
     _getFilesIsolate = await useCase.getAllImages(
-        path: path, receivePort: _getFilesRecievePort);
+        path: path, receivePort: _getFilesRecievePort!);
 
     _getFilesStreamListener();
   }
 
   _getFilesStreamListener() {
-    var _getFilesChannel = IsolateChannel.connectReceive(_getFilesRecievePort);
+    var _getFilesChannel = IsolateChannel.connectReceive(_getFilesRecievePort!);
     List<FileWrapper> allImages = [];
     _getFilesChannel.stream.listen((filesWrapper) {
       if (clearTheList.value) {
@@ -128,8 +128,8 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
         print("koko > done");
         if (_getFilesIsolate != null && _getFilesRecievePort != null) {
           print("koko done stop the isolate");
-          _getFilesRecievePort.close();
-          _getFilesIsolate.kill();
+          _getFilesRecievePort?.close();
+          _getFilesIsolate?.kill();
           _getFilesIsolate = null;
           _getFilesRecievePort = null;
         }
@@ -146,7 +146,7 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
     createNewFolderState.value = CreatingNewFolder();
     try {
       var mainDir = await getExternalStorageDirectory();
-      var path = dir.value == "/" ? "${mainDir.path}" : dir.value;
+      var path = dir.value == "/" ? "${mainDir!.path}" : dir.value;
 
       // !! Note : this validation part could be better practise to be in its own class
       // but for simplicity i didn't put into one .
@@ -260,7 +260,7 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
 
   Future<String> _providePath() async {
     var mainDir = await getExternalStorageDirectory();
-    var path = dir.value == "/" ? "${mainDir.path}" : dir.value;
+    var path = dir.value == "/" ? "${mainDir!.path}" : dir.value;
     return path;
   }
 

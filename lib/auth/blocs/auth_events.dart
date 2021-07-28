@@ -9,7 +9,7 @@ class AuthEvent extends Equatable {
 class Login extends AuthEvent {
   final String email;
   final String password;
-  Login({this.email, this.password});
+  Login({required this.email, required this.password});
   @override
   List<Object> get props => [email, password];
 }
@@ -18,7 +18,7 @@ class Signup extends AuthEvent {
   final String email;
   final String username;
   final String password;
-  Signup({this.email, this.password, this.username});
+  Signup({required this.email, required this.password, required this.username});
 
   @override
   List<Object> get props => [email, password, username];
@@ -26,7 +26,7 @@ class Signup extends AuthEvent {
 
 class SetSettings extends AuthEvent {
   final String key;
-  SetSettings({this.key});
+  SetSettings({required this.key});
   @override
   List<Object> get props => [key];
 }

@@ -9,7 +9,7 @@ class InitAuth extends AuthState {}
 
 class LoggedIn extends AuthState {
   bool didnotCompleteSignup;
-  LoggedIn({this.didnotCompleteSignup});
+  LoggedIn({required this.didnotCompleteSignup});
 }
 
 class SignedUp extends AuthState {}
@@ -18,7 +18,7 @@ class Authenticating extends AuthState {}
 
 class AuthError extends AuthState {
   String error;
-  AuthError({this.error});
+  AuthError({required this.error});
   @override
   List<Object> get props => [error];
 }
@@ -27,7 +27,7 @@ class AddingSettings extends AuthState {}
 
 class AddSettingsError extends AuthState {
   String error;
-  AddSettingsError({this.error});
+  AddSettingsError({required this.error});
   @override
   List<Object> get props => [error];
 }

@@ -15,10 +15,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
-import 'package:photo/photo.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:data_protector/util/helper_functions.dart';
 import 'package:data_protector/aboutus/AboutUsWidget.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'ImageCard.dart';
 
 class EncryptedImagesWidget extends StatefulWidget {
@@ -29,9 +29,9 @@ class EncryptedImagesWidget extends StatefulWidget {
 class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     with TickerProviderStateMixin {
   final EncryptImagesBloc bloc = EncryptImagesBloc(useCase: Get.find());
-  ScrollController controller;
-  AnimationController _floatingButtonController;
-  TextEditingController folderName;
+  late ScrollController controller;
+  late AnimationController _floatingButtonController;
+  late TextEditingController folderName;
 
   static const List<IconData> icons = const [
     Icons.create_new_folder,
@@ -201,7 +201,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                       ),
                       onPressed: () {
                         bloc.isImageSelecting.value = false;
-                        bloc.selectedImages.value = List();
+                        bloc.selectedImages.value = List.empty();
                       })
                 ]
               : bloc.isFolderSelecting.value
@@ -212,13 +212,13 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                             bloc.add(DeleteFolders(
                                 folders: bloc.selectedFolder.value));
                             bloc.isFolderSelecting.value = false;
-                            bloc.selectedFolder.value = List();
+                            bloc.selectedFolder.value = List.empty();
                           }),
                       IconButton(
                           icon: Icon(Icons.close, color: Colors.white),
                           onPressed: () {
                             bloc.isFolderSelecting.value = false;
-                            bloc.selectedFolder.value = List();
+                            bloc.selectedFolder.value = List.empty();
                           })
                     ]
                   : [
@@ -317,10 +317,14 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
           return buildGridView(state);
         } else {
           return Container(
-            margin: EdgeInsets.only(top: screeHeight / 5),
-            child: Center(
-              child: Text("No Encrypted Images Yet ."),
-            ),
+            width: double.infinity,
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              pathNameWidget(),
+              Spacer(),
+              Align(child: Text("No Encrypted Images Yet .")),
+              Spacer()
+            ]),
           );
         }
       } else if (state is GettingImagesFailed) {
@@ -343,6 +347,11 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     });
   }
 
+  Widget pathNameWidget() {
+    return Text("Your files : " + exctractCurrentFolderName(bloc.dir.value),
+        style: titleTextStyle);
+  }
+
   Widget buildGridView(GotImages state) {
     var isFolderSelecting = bloc.isFolderSelecting;
     var isImageSelecting = bloc.isImageSelecting;
@@ -352,8 +361,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Your files : " + exctractCurrentFolderName(bloc.dir.value),
-            style: titleTextStyle),
+        pathNameWidget(),
         Expanded(
           child: Padding(
               padding: const EdgeInsets.all(8.0),
@@ -431,12 +439,13 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                               }
                             } else {
                               print("len > open photo name >" +
-                                  file.thumbUint8list.lengthInBytes.toString());
+                                  file.thumbUint8list!.lengthInBytes
+                                      .toString());
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) => ShowFullImage(
-                                          image: file.uint8list)));
+                                          image: file.uint8list!)));
                             }
                           });
                     } else {
@@ -471,7 +480,7 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                 context,
                 MaterialPageRoute(
                     builder: (context) =>
-                        ShowFullImage(image: image.uint8list)));
+                        ShowFullImage(image: image.uint8list!)));
           }
         },
         child: Obx(() => Container(
@@ -483,9 +492,9 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
                 color: bloc.selectedImages.contains(image) ? Colors.grey : null,
               ),
               child: bloc.isImageSelecting.value
-                  ? containerImageCard(image.uint8list)
+                  ? containerImageCard(image.uint8list!)
                   : putImageInHero(
-                      image.file.id, containerImageCard(image.uint8list)),
+                      image.file.id, containerImageCard(image.uint8list!)),
             )));
   }
 
@@ -723,49 +732,73 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     ]);
   }
 
-  Future<List<AssetEntity>> _pickAsset(PickType type,
-      {List<AssetPathEntity> pathList}) async {
-    List<AssetEntity> imgList = await PhotoPicker.pickAsset(
-      // BuildContext required
-      context: context,
-      provider: I18nProvider.english,
-      pickType: type,
-      thumbSize: THUMB_SIZE,
-      maxSelected: MAX_SELECTED_IMAGES,
-      photoPathList: pathList,
-    );
+  // Future<List<AssetEntity>> _pickAsset(PickType type,
+  //     {List<AssetPathEntity>? pathList}) async {
+  //   List<AssetEntity> imgList = await PhotoPicker.pickAsset(
+  //     // BuildContext required
+  //     context: context,
+  //     provider: I18nProvider.english,
+  //     pickType: type,
+  //     thumbSize: THUMB_SIZE,
+  //     maxSelected: MAX_SELECTED_IMAGES,
+  //     photoPathList: pathList,
+  //   );
 
-    if (imgList == null || imgList.isEmpty) {
-      print("no pick");
-      return Future.value(null);
-    } else {
-      return imgList;
-    }
-  }
+  //   if (imgList == null || imgList.isEmpty) {
+  //     print("no pick");
+  //     return Future.value(null);
+  //   } else {
+  //     return imgList;
+  //   }
+  // }
 
-  Future<void> loadAssets() async {
+  // Future<void> loadAssets() async {
+  //   List<Uint8List> resultList = [];
+  //   List<Uint8List> thumbtList = [];
+
+  //   try {
+  //     var assetPathList =
+  //         await PhotoManager.getAssetPathList(type: RequestType.image);
+  //     var picked =
+  //         await _pickAsset(PickType.onlyImage, pathList: assetPathList);
+  //     if (picked != null) {
+  //       for (var image in picked) {
+  //         var thumb = await image.thumbDataWithSize(64, 64);
+
+  //         var origin = await image.originBytes;
+  //         resultList.add(origin!);
+  //         thumbtList.add(thumb!);
+  //       }
+  //       print("len > resultList " + resultList[0].lengthInBytes.toString());
+  //       print("len > thums " + thumbtList[0].lengthInBytes.toString());
+
+  //       bloc.add(EncryptImages(images: resultList, thumbs: thumbtList));
+  //     }
+  //   } on Exception catch (e) {
+  //     bloc.add(PickingImagesError(error: e.toString()));
+  //   }
+  // }
+
+  Future loadAssets() async {
     List<Uint8List> resultList = [];
     List<Uint8List> thumbtList = [];
 
     try {
-      var assetPathList =
-          await PhotoManager.getAssetPathList(type: RequestType.image);
-      var picked =
-          await _pickAsset(PickType.onlyImage, pathList: assetPathList);
+      final List<AssetEntity>? picked = await AssetPicker.pickAssets(context,
+          maxAssets: MAX_SELECTED_IMAGES,
+          gridThumbSize: THUMB_SIZE,
+          textDelegate: EnglishTextDelegate());
       if (picked != null) {
         for (var image in picked) {
-          var thumb = await image.thumbDataWithSize(64, 64);
-
+          var thumb = await image.thumbDataWithSize(THUMB_SIZE, THUMB_SIZE);
           var origin = await image.originBytes;
-          resultList.add(origin);
-          thumbtList.add(thumb);
+          resultList.add(origin!);
+          thumbtList.add(thumb!);
         }
-        print("len > resultList " + resultList[0].lengthInBytes.toString());
-        print("len > thums " + thumbtList[0].lengthInBytes.toString());
 
         bloc.add(EncryptImages(images: resultList, thumbs: thumbtList));
       }
-    } on Exception catch (e) {
+    } catch (e) {
       bloc.add(PickingImagesError(error: e.toString()));
     }
   }

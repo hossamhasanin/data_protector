@@ -3,7 +3,7 @@ import 'package:hive/hive.dart';
 part 'File.g.dart';
 
 @HiveType(typeId: 0)
-class File{
+class File {
   @HiveField(0)
   String id;
 
@@ -16,6 +16,9 @@ class File{
   @HiveField(3)
   int type;
 
-  File({this.name , this.id , this.path , this.type});
-
+  File(
+      {required this.name,
+      required this.id,
+      required this.path,
+      required this.type});
 }

@@ -9,15 +9,15 @@ class ImageCard extends StatefulWidget {
   RxList<FileWrapper> selectedImages;
   FileWrapper image;
   Function onTap;
-  Function onLongPress;
+  Function() onLongPress;
 
   ImageCard({
-    this.selectedImages,
-    this.isImageSelecting,
-    this.isFolderSelecting,
-    this.image,
-    this.onLongPress,
-    this.onTap,
+    required this.selectedImages,
+    required this.isImageSelecting,
+    required this.isFolderSelecting,
+    required this.image,
+    required this.onLongPress,
+    required this.onTap,
   });
 
   @override
@@ -30,8 +30,8 @@ class _ImageCardState extends State<ImageCard> {
     // print("koko select card > " + widget.isImageSelecting.value.toString());
     // print("koko select card contains > " +
     //     widget.selectedImages.contains(widget.image).toString());
-    print(
-        "thumb size > " + widget.image.thumbUint8list.lengthInBytes.toString());
+    print("thumb size > " +
+        widget.image.thumbUint8list!.lengthInBytes.toString());
     return GestureDetector(
         onLongPress: widget.onLongPress,
         onTap: () {
@@ -60,7 +60,7 @@ class _ImageCardState extends State<ImageCard> {
                     child: ClipRRect(
                   borderRadius: BorderRadius.circular(20.0),
                   child: Image.memory(
-                    widget.image.thumbUint8list,
+                    widget.image.thumbUint8list!,
                     fit: BoxFit.cover,
                   ),
                 )),

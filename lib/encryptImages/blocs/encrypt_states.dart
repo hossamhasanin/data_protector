@@ -17,7 +17,7 @@ class Encrypting extends EncryptState {}
 
 class EncryptFailed extends EncryptState {
   String error;
-  EncryptFailed({this.error});
+  EncryptFailed({required this.error});
   @override
   // TODO: implement props
   List<Object> get props => [error];
@@ -35,7 +35,7 @@ class Decrypting extends DecryptState {}
 
 class DecryptFailed extends DecryptState {
   String error;
-  DecryptFailed({this.error});
+  DecryptFailed({required this.error});
   @override
   // TODO: implement props
   List<Object> get props => [error];
@@ -53,7 +53,7 @@ class DeletingFolder extends DeleteFolderState {}
 
 class DeleteFolderFailed extends DeleteFolderState {
   String error;
-  DeleteFolderFailed({this.error});
+  DeleteFolderFailed({required this.error});
   @override
   // TODO: implement props
   List<Object> get props => [error];
@@ -71,7 +71,7 @@ class CreatingNewFolder extends CreateNewFolderState {}
 
 class CreateNewFolderFailed extends CreateNewFolderState {
   String error;
-  CreateNewFolderFailed({this.error});
+  CreateNewFolderFailed({required this.error});
   @override
   // TODO: implement props
   List<Object> get props => [error];
@@ -84,7 +84,7 @@ class GettingImages extends GetImagesState {}
 class GotImages extends GetImagesState {
   List<FileWrapper> images;
 
-  GotImages({this.images});
+  GotImages({required this.images});
 
   @override
   // TODO: implement props
@@ -93,7 +93,7 @@ class GotImages extends GetImagesState {
 
 class GettingImagesFailed extends GetImagesState {
   String error;
-  GettingImagesFailed({this.error});
+  GettingImagesFailed({required this.error});
   @override
   // TODO: implement props
   List<Object> get props => [error];
@@ -105,7 +105,7 @@ class SignedOutSuccessFully extends SignOutState {}
 
 class SignedOutFailed extends SignOutState {
   String error;
-  SignedOutFailed({this.error});
+  SignedOutFailed({required this.error});
 }
 
 class ShareImageState {}
@@ -116,7 +116,7 @@ class SharedImagesSuccessFully extends ShareImageState {}
 
 class ShareImagesFailed extends ShareImageState {
   String error;
-  ShareImagesFailed({this.error});
+  ShareImagesFailed({required this.error});
 }
 
 class ImportEncFilesState {}
@@ -127,7 +127,7 @@ class ImportedEncFilesSuccessFully extends ImportEncFilesState {}
 
 class ImportEncFilesFailed extends ImportEncFilesState {
   String error;
-  ImportEncFilesFailed({this.error});
+  ImportEncFilesFailed({required this.error});
 }
 
 class DeleteFilesState {}
@@ -138,5 +138,5 @@ class DeleteFilesSuccessFully extends DeleteFilesState {}
 
 class DeleteFilesFailed extends DeleteFilesState {
   String error;
-  DeleteFilesFailed({this.error});
+  DeleteFilesFailed({required this.error});
 }

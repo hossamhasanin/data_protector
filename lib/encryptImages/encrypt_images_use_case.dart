@@ -24,21 +24,21 @@ import 'package:share/share.dart';
 import 'package:stream_channel/isolate_channel.dart';
 import 'package:data_protector/util/helper_functions.dart';
 
-class Ts {
-  File f;
-  bool b;
-  Ts({this.f, this.b});
-}
+// class Ts {
+//   File f;
+//   bool b;
+//   Ts({this.f, this.b});
+// }
 
 _loadEncFile(List<Object> l) async {
-  SendPort statePort = l[0];
-  String path = l[1];
-  String key = l[2];
+  SendPort statePort = l[0] as SendPort;
+  String path = l[1] as String;
+  String key = l[2] as String;
   List<FileWrapper> readyToLoad = [];
   IsolateChannel state = IsolateChannel.connectSend(statePort);
-  SendPort deletingFilesPort = l[3];
-  List files = l[4];
-  Encrypt encrypting = l[5];
+  SendPort deletingFilesPort = l[3] as SendPort;
+  List files = l[4] as List;
+  Encrypt encrypting = l[5] as Encrypt;
   var deletingFilesChannel = IsolateChannel.connectSend(deletingFilesPort);
 
   print("koko > all files in database is " + files.length.toString());
@@ -46,8 +46,8 @@ _loadEncFile(List<Object> l) async {
   if (files.isNotEmpty) {
     for (var i = 0; i <= files.length - 1; i++) {
       var file = files[i];
-      var decImageFile;
-      var decThumbFile;
+      Uint8List? decImageFile;
+      Uint8List? decThumbFile;
       try {
         //
         if (file.type == SavedFileType.IMAGE.index) {
@@ -65,12 +65,12 @@ _loadEncFile(List<Object> l) async {
                 encrypting.decrypt(encThumbFile.readAsBytesSync(), key);
           } else {
             print("koko thumb with name $thumbName not seen");
-            Image image = decodeImage(decImageFile);
+            Image image = decodeImage(decImageFile)!;
 
             // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
             Image thumbnail = copyResize(image, width: THUMB_SIZE);
 
-            decThumbFile = encodePng(thumbnail);
+            decThumbFile = Uint8List.fromList(encodePng(thumbnail));
             var encryptThumb = encrypting.encrypt(decThumbFile, key);
 
             // Save the thumbnail as a PNG.
@@ -120,12 +120,12 @@ _loadEncFile(List<Object> l) async {
         continue;
       }
     }
-    GetImagesStreamWrapper imagesStreamWrapper =
-        GetImagesStreamWrapper(images: null, done: true, empty: false);
+    GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
+        images: null, done: true, empty: false, error: null);
     state.sink.add(imagesStreamWrapper);
   } else {
-    GetImagesStreamWrapper imagesStreamWrapper =
-        GetImagesStreamWrapper(images: [], done: false, empty: true);
+    GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
+        images: [], done: false, empty: true, error: null);
     state.sink.add(imagesStreamWrapper);
   }
 }
@@ -136,11 +136,14 @@ class EnnryptImagesUseCase {
   Encrypt encrypting;
 
   EnnryptImagesUseCase(
-      {this.dataScource, this.encrypting, this.authDataSource});
+      {required this.dataScource,
+      required this.encrypting,
+      required this.authDataSource});
 
-  Future<Isolate> getAllImages({String path, ReceivePort receivePort}) async {
+  Future<Isolate> getAllImages(
+      {required String path, required ReceivePort receivePort}) async {
     await dataScource.initDatabase();
-    String key = await _getEncKey();
+    String? key = await _getEncKey();
     List<FileWrapper> readyToLoad = [];
     var files = await dataScource.getFiles(path);
     var deletingRecievePort = ReceivePort();
@@ -162,12 +165,12 @@ class EnnryptImagesUseCase {
       deletingRecievePort.close();
     });
 
-    final loadEncFileIsolate = await Isolate.spawn(
+    final loadEncFileIsolate = await Isolate.spawn<List<Object>>(
       _loadEncFile,
       [
         receivePort.sendPort,
         path,
-        key,
+        key!,
         deletingRecievePort.sendPort,
         files,
         encrypting,
@@ -176,16 +179,16 @@ class EnnryptImagesUseCase {
     return loadEncFileIsolate;
   }
 
-  Future<String> _getEncKey() {
+  Future<String?> _getEncKey() {
     return authDataSource.getEncryptionKey();
   }
 
-  Future<Exception> encryptImages(
+  Future encryptImages(
       List<Uint8List> images, List<Uint8List> thumbs, String path) async {
-    String key = await _getEncKey();
+    String? key = await _getEncKey();
     var i = 0;
     for (var image in images) {
-      var encrypted = encrypting.encrypt(image, key);
+      var encrypted = encrypting.encrypt(image, key!);
       var encryptedThumb = encrypting.encrypt(thumbs[i], key);
 
       await _saveFileOnTheApp(path, encrypted.bytes,
@@ -221,12 +224,12 @@ class EnnryptImagesUseCase {
   Future decryptImages(List<FileWrapper> images) async {
     var dir = await getExternalStorageDirectory();
     var decryptedImagesPath =
-        await new Directory('${dir.path}/decrypted').create(recursive: true);
+        await new Directory('${dir!.path}/decrypted').create(recursive: true);
     try {
       for (FileWrapper image in images) {
         var name = image.file.name.replaceAll(".$ENC_EXTENSION", ".jpg");
-        await _saveImage(image.uint8list, "${decryptedImagesPath.path}/$name");
-        await PhotoManager.editor.saveImage(image.uint8list, title: name);
+        await _saveImage(image.uint8list!, "${decryptedImagesPath.path}/$name");
+        await PhotoManager.editor.saveImage(image.uint8list!, title: name);
         await deleteFile(image.file.path + "/" + image.file.name);
 
         if (File(image.file.path + "/" + getThumbName(image.file.name))
@@ -243,7 +246,7 @@ class EnnryptImagesUseCase {
   }
 
   Future deleteFolders(List<FileWrapper> folders) async {
-    FileWrapper scopedFolder = null;
+    FileWrapper? scopedFolder = null;
     try {
       for (var folder in folders) {
         scopedFolder = folder;
@@ -260,7 +263,7 @@ class EnnryptImagesUseCase {
         print("koko > deleted the folder stored files");
       }
     } on FileSystemException catch (e) {
-      await dataScource.deleteFile(scopedFolder.file);
+      await dataScource.deleteFile(scopedFolder!.file);
       print("koko > deleted the folder from database");
       return Future.error(
           "Error while deleting ${scopedFolder.file.name} it appears "
@@ -273,14 +276,14 @@ class EnnryptImagesUseCase {
   }
 
   Future importEncryptedFiles(String path) async {
-    FilePickerResult result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
       allowedExtensions: [ENC_EXTENSION],
     );
 
     if (result != null) {
-      List<File> files = result.paths.map((path) => File(path)).toList();
+      List<File> files = result.paths.map((path) => File(path!)).toList();
       print("koko picked enc file > " + result.files[0].name);
       var i = 0;
       var notFoundAnyFile = true;
@@ -303,7 +306,7 @@ class EnnryptImagesUseCase {
   }
 
   Future _saveFileOnTheApp(String path, Uint8List bytes,
-      {Uint8List thumb, String fileName}) async {
+      {Uint8List? thumb, String? fileName}) async {
     var dateTime = DateTime.now()
         .toUtc()
         .toIso8601String()

@@ -4,14 +4,22 @@ class User extends Equatable {
   String id;
   String name;
   String email;
-  String encryptionKey;
+  String? encryptionKey;
 
-  User({this.id, this.email, this.encryptionKey, this.name});
+  User(
+      {required this.id,
+      required this.email,
+      required this.encryptionKey,
+      required this.name});
+
+  factory User.init() {
+    return User(id: "", email: "", encryptionKey: null, name: "");
+  }
 
   @override
-  List<Object> get props => [id, email, encryptionKey, name];
+  List<Object?> get props => [id, email, encryptionKey, name];
 
-  Map<String , dynamic> toDocument() {
+  Map<String, dynamic> toDocument() {
     return {
       "id": this.id,
       "name": this.name,

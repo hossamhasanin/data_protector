@@ -3,5 +3,6 @@ class OnboardingModel {
   String title;
   String desc;
 
-  OnboardingModel({this.image, this.title, this.desc});
+  OnboardingModel(
+      {required this.image, required this.title, required this.desc});
 }

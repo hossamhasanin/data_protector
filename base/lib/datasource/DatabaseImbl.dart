@@ -6,11 +6,11 @@ import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class DatabaseImble implements Database {
-  Box<File> filesBox;
+  Box<File>? filesBox;
 
   @override
   Future<List<File>> getFiles(String path) {
-    var list = filesBox.values.where((file) => file.path == path).toList();
+    var list = filesBox!.values.where((file) => file.path == path).toList();
     list.sort((p, n) {
       return p.type.compareTo(n.type);
     });
@@ -18,7 +18,7 @@ class DatabaseImble implements Database {
   }
 
   @override
-  void initDatabase() async {
+  Future<void> initDatabase() async {
     if (!Hive.isAdapterRegistered(0)) {
       await Hive.initFlutter();
       Hive.registerAdapter(FileAdapter());
@@ -28,12 +28,12 @@ class DatabaseImble implements Database {
 
   @override
   Future<void> addOrUpdateFile(File file) {
-    return filesBox.put(file.id, file);
+    return filesBox!.put(file.id, file);
   }
 
   @override
   Future<void> deleteFile(File file) {
-    return filesBox.delete(file.id);
+    return filesBox!.delete(file.id);
   }
 
   // @override
@@ -47,7 +47,7 @@ class DatabaseImble implements Database {
 
   @override
   Future<void> deleteAllFiles(List<File> files) {
-    return filesBox.deleteAll(files.map((e) => e.id).toList());
+    return filesBox!.deleteAll(files.map((e) => e.id).toList());
   }
 
   // List k() {

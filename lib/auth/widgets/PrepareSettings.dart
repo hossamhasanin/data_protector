@@ -14,21 +14,21 @@ class PrepareSettings extends StatefulWidget {
 
 class _PrepareSettingsState extends State<PrepareSettings>
     with WidgetsBindingObserver {
-  TextEditingController key;
+  late TextEditingController key;
 
   AuthBloc _authBloc = AuthBloc(authUseCase: Get.find());
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance?.addObserver(this);
     key = TextEditingController();
   }
 
   @override
   void dispose() {
     _authBloc.close();
-    WidgetsBinding.instance.removeObserver(this);
+    WidgetsBinding.instance?.removeObserver(this);
     super.dispose();
   }
 

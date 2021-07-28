@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
 showCustomDialog(
-    {BuildContext context,
-    String title,
-    List<Widget> children,
+    {required BuildContext context,
+    required String title,
+    required List<Widget> children,
     bool dissmissable = true}) {
   Dialog dialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
@@ -73,7 +73,7 @@ Widget animatedFloatingActionButtons(
           heroTag: null,
           child: new AnimatedBuilder(
             animation: floatingButtonController,
-            builder: (BuildContext context, Widget child) {
+            builder: (BuildContext context, Widget? child) {
               return new Transform(
                 transform: new Matrix4.rotationZ(
                     floatingButtonController.value * 0.5 * math.pi),

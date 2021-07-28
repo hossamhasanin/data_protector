@@ -41,7 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
       builder: (context, snapshot) {
         // Check for errors
         if (snapshot.hasError) {
-          return Scaffold(body: error());
+          return Scaffold(body: error(snapshot.error.toString()));
         }
 
         // Once complete, show your application
@@ -64,9 +64,9 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget error() {
+  Widget error(String mess) {
     return Center(
-      child: Text("Error with the app"),
+      child: Text(mess),
     );
   }
 }

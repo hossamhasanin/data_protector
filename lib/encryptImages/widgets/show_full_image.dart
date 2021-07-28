@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class ShowFullImage extends StatefulWidget {
   Uint8List image;
 
-  ShowFullImage({this.image});
+  ShowFullImage({required this.image});
 
   @override
   _ShowFullImageState createState() => _ShowFullImageState();

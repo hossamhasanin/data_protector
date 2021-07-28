@@ -17,8 +17,8 @@ class FirebaseAuthDataSource implements AuthDataSource {
   Future<String> signup(String username, String email, String password) async {
     var signup = await _auth.createUserWithEmailAndPassword(
         email: email, password: password);
-    await signup.user.updateProfile(displayName: username);
-    return Future.value(signup.user.uid);
+    await signup.user!.updateProfile(displayName: username);
+    return Future.value(signup.user!.uid);
   }
 
   @override
@@ -41,17 +41,17 @@ class FirebaseAuthDataSource implements AuthDataSource {
   Future<void> setEncryptionKey(String key) {
     return _firestore
         .collection(USERS_COLLECTION)
-        .doc(_auth.currentUser.uid)
+        .doc(_auth.currentUser!.uid)
         .update({"encryptionKey": key});
   }
 
   @override
-  Future<String> getEncryptionKey() async {
+  Future<String?> getEncryptionKey() async {
     final user = await _firestore
         .collection(USERS_COLLECTION)
-        .doc(_auth.currentUser.uid)
+        .doc(_auth.currentUser!.uid)
         .get();
-    return Future.value(user.data()["encryptionKey"]);
+    return Future.value(user.data()!["encryptionKey"]);
   }
 
   @override
@@ -67,14 +67,14 @@ class FirebaseAuthDataSource implements AuthDataSource {
   Future deleteUser() async {
     await _firestore
         .collection(USERS_COLLECTION)
-        .doc(_auth.currentUser.uid)
+        .doc(_auth.currentUser!.uid)
         .delete();
-    return _auth.currentUser.delete();
+    return _auth.currentUser!.delete();
   }
 
   Stream<U.User> get userData => _auth.userChanges().map((event) => U.User(
-      name: event.displayName,
-      email: event.email,
+      name: event!.displayName!,
+      email: event.email!,
       id: event.uid,
       encryptionKey: null));
 }

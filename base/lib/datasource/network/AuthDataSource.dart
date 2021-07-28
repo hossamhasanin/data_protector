@@ -6,7 +6,7 @@ abstract class AuthDataSource {
   Future<void> createUserInDatabase(User user);
   Future<void> updateUserData(User user);
   Future<void> setEncryptionKey(String key);
-  Future<String> getEncryptionKey();
+  Future<String?> getEncryptionKey();
   bool isLogedIn();
   Future<void> logOut();
   Future deleteUser();

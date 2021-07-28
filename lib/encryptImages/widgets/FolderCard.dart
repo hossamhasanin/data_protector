@@ -9,15 +9,15 @@ class FolderCard extends StatefulWidget {
   RxList<FileWrapper> selectedFolder;
   FileWrapper folder;
   Function onTap;
-  Function onLongPress;
+  Function() onLongPress;
 
   FolderCard(
-      {this.isFolderSelecting,
-      this.isImageSelecting,
-      this.folder,
-      this.selectedFolder,
-      this.onTap,
-      this.onLongPress});
+      {required this.isFolderSelecting,
+      required this.isImageSelecting,
+      required this.folder,
+      required this.selectedFolder,
+      required this.onTap,
+      required this.onLongPress});
 
   @override
   _FolderCardState createState() => _FolderCardState();

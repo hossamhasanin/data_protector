@@ -5,18 +5,20 @@ import 'package:base/models/user.dart';
 class AuthUseCase {
   AuthDataSource _authDataSource;
   Encrypt _encrypt;
-  AuthUseCase({AuthDataSource authDataSource, Encrypt encrypt})
+  AuthUseCase(
+      {required AuthDataSource authDataSource, required Encrypt encrypt})
       : _encrypt = encrypt,
         _authDataSource = authDataSource;
 
-  Future<String> login(String email, String password) async {
+  Future<String?> login(String email, String password) async {
     await _authDataSource.login(email, password);
     return _authDataSource.getEncryptionKey();
   }
 
   Future<void> signup(String username, String email, String password) async {
     final userId = await _authDataSource.signup(username, email, password);
-    final user = User(id: userId, name: username, email: email);
+    final user =
+        User(id: userId, name: username, email: email, encryptionKey: null);
     return _authDataSource.createUserInDatabase(user);
   }
 

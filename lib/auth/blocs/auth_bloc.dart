@@ -1,5 +1,3 @@
-import 'package:base/datasource/network/AuthDataSource.dart';
-import 'package:base/models/user.dart';
 import 'package:data_protector/auth/AuthUseCase.dart';
 import 'package:data_protector/auth/blocs/auth_events.dart';
 import 'package:data_protector/auth/blocs/auth_states.dart';
@@ -7,11 +5,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get_rx/get_rx.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthUseCase _authUseCase;
+  final AuthUseCase _authUseCase;
   Rx<AuthState> authState = AuthState().obs;
-  AuthState previousAuthState;
+  AuthState? previousAuthState;
 
-  AuthBloc({AuthUseCase authUseCase})
+  AuthBloc({required AuthUseCase authUseCase})
       : _authUseCase = authUseCase,
         super(InitAuth());
 
@@ -19,6 +17,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Stream<AuthState> mapEventToState(AuthEvent event) async* {
     print("koko > " + event.props.toString());
     if (event is Login) {
+      print("koko > login bka");
       yield* login(event);
     } else if (event is Signup) {
       print("koko > signup");
