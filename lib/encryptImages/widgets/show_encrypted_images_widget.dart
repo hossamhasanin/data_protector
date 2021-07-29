@@ -348,7 +348,8 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
   }
 
   Widget pathNameWidget() {
-    return Text("Your files : " + exctractCurrentFolderName(bloc.dir.value),
+    return Text(
+        "Your files : " + exctractCurrentFolderName(bloc.dir.value) + "/",
         style: titleTextStyle);
   }
 

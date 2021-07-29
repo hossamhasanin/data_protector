@@ -18,11 +18,12 @@ class DatabaseImble implements Database {
   }
 
   @override
-  Future<void> initDatabase() async {
+  Future<void> initDatabase(String userId) async {
     if (!Hive.isAdapterRegistered(0)) {
       await Hive.initFlutter();
       Hive.registerAdapter(FileAdapter());
-      filesBox = await Hive.openBox<File>("filesBox");
+      // filesBox = await Hive.openBox<File>("filesBox");
+      filesBox = await Hive.openBox<File>(userId);
     }
   }
 

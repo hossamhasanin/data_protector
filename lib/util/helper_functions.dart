@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:flutter/cupertino.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 const _chars =
@@ -17,7 +18,7 @@ extension StringExtension on String {
 }
 
 String exctractCurrentFolderName(String name) {
-  return name.split("/files").last;
+  return name.split(RegExp(r"/files/[a-zA-Z0-9]*")).last;
 }
 
 Future deleteFile(String fileName) async {
@@ -33,4 +34,10 @@ Future deleteFile(String fileName) async {
 
 String getThumbName(String fileName) {
   return "${fileName.split(".hg")[0]}_thumb.hg";
+}
+
+// Get the proportionate height as per screen size
+double getProportionateScreenHeight(BuildContext context, int factor) {
+  double screenHeight = MediaQuery.of(context).size.height / factor;
+  return screenHeight;
 }

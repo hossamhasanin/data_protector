@@ -141,8 +141,17 @@ class EnnryptImagesUseCase {
       required this.authDataSource});
 
   Future<Isolate> getAllImages(
-      {required String path, required ReceivePort receivePort}) async {
-    await dataScource.initDatabase();
+      {required String path,
+      required ReceivePort receivePort,
+      required String userId}) async {
+    await dataScource.initDatabase(userId);
+
+    var isFolderExist = await Directory(path).exists();
+
+    if (!isFolderExist) {
+      await new Directory(path).create();
+    }
+
     String? key = await _getEncKey();
     List<FileWrapper> readyToLoad = [];
     var files = await dataScource.getFiles(path);

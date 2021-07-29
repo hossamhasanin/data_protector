@@ -1,7 +1,7 @@
 import 'package:base/datasource/File.dart';
 
 abstract class Database {
-  Future initDatabase();
+  Future initDatabase(String userId);
   Future<List<File>> getFiles(String path);
   Future<void> addOrUpdateFile(File file);
   // Future<void> addFiles(List<File> files);

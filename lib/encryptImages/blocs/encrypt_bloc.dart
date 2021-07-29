@@ -99,7 +99,8 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
     print("koko > load images");
     getImagesState.value = GettingImages();
     var dir = await getExternalStorageDirectory();
-    var path = event.path == "/" ? "${dir!.path}" : event.path;
+    var path = event.path == "/" ? "${dir!.path}/${user.value.id}" : event.path;
+    // var path = await _providePath();
     print("koko path is > $path");
     if (event.path != "/") {
       this.dir.value = event.path;
@@ -107,7 +108,7 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
     clearTheList.value = event.clearTheList;
     _getFilesRecievePort = ReceivePort();
     _getFilesIsolate = await useCase.getAllImages(
-        path: path, receivePort: _getFilesRecievePort!);
+        path: path, receivePort: _getFilesRecievePort!, userId: user.value.id);
 
     _getFilesStreamListener();
   }
@@ -145,9 +146,10 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
   Stream<EncryptState> _createNewFolder(CreateNewFolder event) async* {
     createNewFolderState.value = CreatingNewFolder();
     try {
-      var mainDir = await getExternalStorageDirectory();
-      var path = dir.value == "/" ? "${mainDir!.path}" : dir.value;
+      // var mainDir = await getExternalStorageDirectory();
+      // var path = dir.value == "/" ? "${mainDir!.path}" : dir.value;
 
+      var path = await _providePath();
       // !! Note : this validation part could be better practise to be in its own class
       // but for simplicity i didn't put into one .
       final validCharacters = RegExp(r'^[a-zA-Z0-9_]+$');
@@ -260,7 +262,8 @@ class EncryptImagesBloc extends Bloc<EncryptEvent, EncryptState> {
 
   Future<String> _providePath() async {
     var mainDir = await getExternalStorageDirectory();
-    var path = dir.value == "/" ? "${mainDir!.path}" : dir.value;
+    var path =
+        dir.value == "/" ? "${mainDir!.path}/${user.value.id}" : dir.value;
     return path;
   }
 
