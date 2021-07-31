@@ -64,11 +64,15 @@ class _LoginPageState extends State<LoginPage>
                 dissmissable: false);
           } else if (state is LoggedIn) {
             if (state.didnotCompleteSignup)
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (_) => PrepareSettings()));
+              Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => PrepareSettings()),
+                  (_) => false);
             else
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (_) => EncryptedImagesWidget()));
+              Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => EncryptedImagesWidget()),
+                  (_) => false);
           } else if (state is AuthError) {
             Navigator.pop(context);
             showCustomDialog(
@@ -284,8 +288,8 @@ class _LoginPageState extends State<LoginPage>
                 SizedBox(width: 5.0),
                 InkWell(
                   onTap: () {
-                    Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => SignupPage()));
+                    Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (_) => SignupPage()));
                   },
                   child: Text(
                     "Register",

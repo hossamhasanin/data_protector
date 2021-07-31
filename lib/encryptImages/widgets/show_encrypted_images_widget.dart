@@ -82,98 +82,103 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     Color backgroundColor = Theme.of(context).cardColor;
     Color foregroundColor = Theme.of(context).accentColor;
 
-    return Scaffold(
-      floatingActionButton: animatedFloatingActionButtons(
-          _floatingButtonController, icons, backgroundColor, foregroundColor, [
-        // create folder
-        () {
-          showCreateNewFolderDialog();
-        },
-        // encrypt image
-        () {
-          loadAssets();
-        },
-        // import encrypted files to the app
-        () {
-          bloc.add(ImportEncFiles());
-        }
-      ]),
-      backgroundColor: Colors.blue,
-      body: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.only(top: 40.0, left: 30.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Obx(() {
-                  if (bloc.dir.value != "/") {
-                    return IconButton(
-                      icon: Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                      ),
-                      onPressed: () {
-                        var paths = bloc.dir.value.split("/").toList();
-                        paths.removeLast();
-                        bloc.dir.value =
-                            paths.last == "files" ? "/" : paths.join("/");
-                        bloc.add(GetStoredFiles(
-                            path: bloc.dir.value, clearTheList: true));
-                      },
-                    );
-                  } else {
-                    return Container(
-                      height: 72.0,
-                      width: 72.0,
-                      decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          image: DecorationImage(
-                              image:
-                                  AssetImage("assets/images/lock_icon.png"))),
-                    );
-                  }
-                }),
-                Expanded(
-                  child: Obx(() => Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Hi, ${bloc.user.value.name.capitalizeFirstLetter()}",
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: nameTextStyle,
-                          ),
-                          SizedBox(
-                            height: 20.0,
-                          ),
-                          Text(
-                            "Protect your files",
-                            style: subTextStyle,
-                          ),
-                        ],
-                      )),
-                ),
-                Obx(() => buildMenuesRow())
-              ],
+    return WillPopScope(
+      onWillPop: () {
+        goBack();
+        return Future.value(false);
+      },
+      child: Scaffold(
+        floatingActionButton: animatedFloatingActionButtons(
+            _floatingButtonController,
+            icons,
+            backgroundColor,
+            foregroundColor, [
+          // create folder
+          () {
+            showCreateNewFolderDialog();
+          },
+          // encrypt image
+          () {
+            loadAssets();
+          },
+          // import encrypted files to the app
+          () {
+            bloc.add(ImportEncFiles());
+          }
+        ]),
+        backgroundColor: Colors.blue,
+        body: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.only(top: 40.0, left: 30.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Obx(() {
+                    if (exctractCurrentFolderName(bloc.dir.value) != "/" &&
+                        exctractCurrentFolderName(bloc.dir.value) != "") {
+                      return IconButton(
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          goBack();
+                        },
+                      );
+                    } else {
+                      return Container(
+                        height: 72.0,
+                        width: 72.0,
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            image: DecorationImage(
+                                image:
+                                    AssetImage("assets/images/lock_icon.png"))),
+                      );
+                    }
+                  }),
+                  Expanded(
+                    child: Obx(() => Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Hi, ${bloc.user.value.name.capitalizeFirstLetter()}",
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: nameTextStyle,
+                            ),
+                            SizedBox(
+                              height: 20.0,
+                            ),
+                            Text(
+                              "Protect your files",
+                              style: subTextStyle,
+                            ),
+                          ],
+                        )),
+                  ),
+                  Obx(() => buildMenuesRow())
+                ],
+              ),
             ),
-          ),
-          SizedBox(
-            height: 20.0,
-          ),
-          Expanded(
-              child: Container(
-            padding: EdgeInsets.all(20.0),
-            decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(30.0),
-                    topLeft: Radius.circular(30.0))),
-            child: mainContents(),
-          ))
-        ],
+            SizedBox(
+              height: 20.0,
+            ),
+            Expanded(
+                child: Container(
+              padding: EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(30.0),
+                      topLeft: Radius.circular(30.0))),
+              child: mainContents(),
+            ))
+          ],
+        ),
       ),
     );
   }
@@ -351,6 +356,15 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     return Text(
         "Your files : " + exctractCurrentFolderName(bloc.dir.value) + "/",
         style: titleTextStyle);
+  }
+
+  void goBack() {
+    var currentFolder = exctractCurrentFolderName(bloc.dir.value);
+    if (currentFolder == "/" || currentFolder == "") return;
+    var paths = bloc.dir.value.split("/").toList();
+    paths.removeLast();
+    bloc.dir.value = paths.last == "files" ? "/" : paths.join("/");
+    bloc.add(GetStoredFiles(path: bloc.dir.value, clearTheList: true));
   }
 
   Widget buildGridView(GotImages state) {
@@ -672,8 +686,8 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
     bloc.signOutState.listen((state) {
       print("koko > " + state.toString());
       if (state is SignedOutSuccessFully) {
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (_) => LoginPage()));
+        Navigator.pushAndRemoveUntil(context,
+            MaterialPageRoute(builder: (_) => LoginPage()), (_) => false);
       } else if (state is SignedOutFailed) {
         Get.snackbar("Auth", state.error);
         print("koko > " + state.error);
@@ -718,8 +732,9 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
             hintStyle: TextStyle(color: Colors.grey)),
         controller: folderName,
       ),
-      RaisedButton(
-        color: Theme.of(context).primaryColor,
+      ElevatedButton(
+        style:
+            ElevatedButton.styleFrom(primary: Theme.of(context).primaryColor),
         child: Text(
           "Create",
           style: TextStyle(color: Colors.white),
@@ -732,53 +747,6 @@ class _EncryptedImagesWidgetState extends State<EncryptedImagesWidget>
       )
     ]);
   }
-
-  // Future<List<AssetEntity>> _pickAsset(PickType type,
-  //     {List<AssetPathEntity>? pathList}) async {
-  //   List<AssetEntity> imgList = await PhotoPicker.pickAsset(
-  //     // BuildContext required
-  //     context: context,
-  //     provider: I18nProvider.english,
-  //     pickType: type,
-  //     thumbSize: THUMB_SIZE,
-  //     maxSelected: MAX_SELECTED_IMAGES,
-  //     photoPathList: pathList,
-  //   );
-
-  //   if (imgList == null || imgList.isEmpty) {
-  //     print("no pick");
-  //     return Future.value(null);
-  //   } else {
-  //     return imgList;
-  //   }
-  // }
-
-  // Future<void> loadAssets() async {
-  //   List<Uint8List> resultList = [];
-  //   List<Uint8List> thumbtList = [];
-
-  //   try {
-  //     var assetPathList =
-  //         await PhotoManager.getAssetPathList(type: RequestType.image);
-  //     var picked =
-  //         await _pickAsset(PickType.onlyImage, pathList: assetPathList);
-  //     if (picked != null) {
-  //       for (var image in picked) {
-  //         var thumb = await image.thumbDataWithSize(64, 64);
-
-  //         var origin = await image.originBytes;
-  //         resultList.add(origin!);
-  //         thumbtList.add(thumb!);
-  //       }
-  //       print("len > resultList " + resultList[0].lengthInBytes.toString());
-  //       print("len > thums " + thumbtList[0].lengthInBytes.toString());
-
-  //       bloc.add(EncryptImages(images: resultList, thumbs: thumbtList));
-  //     }
-  //   } on Exception catch (e) {
-  //     bloc.add(PickingImagesError(error: e.toString()));
-  //   }
-  // }
 
   Future loadAssets() async {
     List<Uint8List> resultList = [];

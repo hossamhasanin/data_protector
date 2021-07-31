@@ -56,8 +56,10 @@ class _PrepareSettingsState extends State<PrepareSettings>
             title: "Wait a bit !",
             children: [CircularProgressIndicator()]);
       } else if (state is AddedSettings) {
-        Navigator.pushReplacement(context,
-            MaterialPageRoute(builder: (_) => EncryptedImagesWidget()));
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => EncryptedImagesWidget()),
+            (_) => false);
       } else if (state is AddSettingsError) {
         showCustomDialog(
             context: context,
@@ -108,12 +110,14 @@ class _PrepareSettingsState extends State<PrepareSettings>
                       obscureText: true,
                     ),
                     SizedBox(height: 70.0),
-                    RaisedButton(
+                    ElevatedButton(
                       onPressed: () {
                         if (key.value.text.isNotEmpty && key.value.text != null)
                           _authBloc.add(SetSettings(key: key.value.text));
                       },
-                      color: Theme.of(context).primaryColor,
+                      style: ElevatedButton.styleFrom(
+                        primary: Theme.of(context).primaryColor,
+                      ),
                       child: Text(
                         "Set The key",
                         style: TextStyle(color: Colors.white),

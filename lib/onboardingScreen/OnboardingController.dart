@@ -10,7 +10,7 @@ class OnboardingController extends GetxController {
         image: "assets/images/onboarding1.png",
         title: "Welcome To $APP_NAME",
         desc:
-            "We are here to keep you images safe and secure and just keep you reliefed"),
+            "We are here to keep your images safe and secure and just keep you relieved"),
     OnboardingModel(
         image: "assets/images/onboarding2.png",
         title: "This is by ...",
@@ -23,11 +23,11 @@ class OnboardingController extends GetxController {
             "Nope we don't touch your photos and you could keep it all private on your device and if one day someone tried to steal them he can not decrypt them to see without your own encryption key"),
     OnboardingModel(
         image: "assets/images/onboarding4.png",
-        title: "Set your own key your self ",
-        desc: "You will set your owm key and only you should know it so that if"
+        title: "Set your own key yourself ",
+        desc: "You will set your own key and only you should know it so that if"
             " you transfered the encrypted files to another device you could easily "
             "decrypt them back ,  and don't wory the keys are "
-            "also encrypted and kept secure always ,  so wanna start ?!"),
+            "also hashed and kept secure always ,  so wanna start ?!"),
   ];
 
   RxInt selectedPage = 0.obs;

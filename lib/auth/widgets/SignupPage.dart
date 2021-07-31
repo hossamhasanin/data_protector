@@ -45,8 +45,8 @@ class _SignupPageState extends State<SignupPage> {
             title: "Wait a bit !",
             children: [CircularProgressIndicator()]);
       } else if (state is SignedUp) {
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (_) => PrepareSettings()));
+        Navigator.pushAndRemoveUntil(context,
+            MaterialPageRoute(builder: (_) => PrepareSettings()), (_) => false);
       } else if (state is AuthError) {
         showCustomDialog(
             context: context,
@@ -187,8 +187,7 @@ class _SignupPageState extends State<SignupPage> {
                             borderRadius: BorderRadius.circular(20.0)),
                         child: InkWell(
                           onTap: () {
-                            Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(builder: (_) => LoginPage()));
+                            Navigator.of(context).pop();
                           },
                           child: Center(
                             child: Text('Go Back',

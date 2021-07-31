@@ -17,7 +17,7 @@ class FirebaseAuthDataSource implements AuthDataSource {
   Future<String> signup(String username, String email, String password) async {
     var signup = await _auth.createUserWithEmailAndPassword(
         email: email, password: password);
-    await signup.user!.updateProfile(displayName: username);
+    await signup.user!.updateDisplayName(username);
     return Future.value(signup.user!.uid);
   }
 
@@ -49,7 +49,7 @@ class FirebaseAuthDataSource implements AuthDataSource {
   Future<String?> getEncryptionKey() async {
     final user = await _firestore
         .collection(USERS_COLLECTION)
-        .doc(_auth.currentUser!.uid)
+        .doc(_auth.currentUser?.uid)
         .get();
     return Future.value(user.data()!["encryptionKey"]);
   }
