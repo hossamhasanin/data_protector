@@ -1,5 +1,4 @@
 import 'package:base/Constants.dart';
-import 'package:data_protector/ui/styles.dart';
 import 'package:flutter/material.dart';
 
 class AboutUs extends StatelessWidget {

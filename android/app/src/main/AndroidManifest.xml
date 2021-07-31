@@ -1,8 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.hossam.hasanin.data_protector">
    <application
-        android:label="data_protector"
-        android:icon="@mipmap/ic_launcher">
+        android:label="HG-guardian"
+        android:icon="@mipmap/hg_gaurdian_icon">
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"

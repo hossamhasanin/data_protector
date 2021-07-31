@@ -193,21 +193,21 @@ class _LoginPageState extends State<LoginPage>
                   //     return Container();
                   //   }
                   // }),
-                  SizedBox(height: 5.0),
-                  Container(
-                    alignment: Alignment(1.0, 0),
-                    padding: EdgeInsets.only(top: 15.0, left: 20.0),
-                    child: InkWell(
-                      child: Text(
-                        "Forgot Password",
-                        style: TextStyle(
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: "Montserrat",
-                            decoration: TextDecoration.underline),
-                      ),
-                    ),
-                  ),
+                  // SizedBox(height: 5.0),
+                  // Container(
+                  //   alignment: Alignment(1.0, 0),
+                  //   padding: EdgeInsets.only(top: 15.0, left: 20.0),
+                  //   child: InkWell(
+                  //     child: Text(
+                  //       "Forgot Password",
+                  //       style: TextStyle(
+                  //           color: Theme.of(context).primaryColor,
+                  //           fontWeight: FontWeight.bold,
+                  //           fontFamily: "Montserrat",
+                  //           decoration: TextDecoration.underline),
+                  //     ),
+                  //   ),
+                  // ),
                   SizedBox(height: 40.0),
                   GestureDetector(
                     onTap: () {
@@ -236,36 +236,36 @@ class _LoginPageState extends State<LoginPage>
                     ),
                   ),
                   SizedBox(height: 20.0),
-                  Container(
-                    height: 40.0,
-                    color: Colors.transparent,
-                    child: Container(
-                      decoration: BoxDecoration(
-                          border: Border.all(
-                              color: Colors.black,
-                              style: BorderStyle.solid,
-                              width: 1.0),
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(20.0)),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          // Center(
-                          //   child: ImageIcon(AssetImage("assets/facebook.png")),
-                          // ),
-                          SizedBox(width: 10.0),
-                          Center(
-                            child: Text(
-                              "Login with facebook",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: "Montserrat"),
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
+                  // Container(
+                  //   height: 40.0,
+                  //   color: Colors.transparent,
+                  //   child: Container(
+                  //     decoration: BoxDecoration(
+                  //         border: Border.all(
+                  //             color: Colors.black,
+                  //             style: BorderStyle.solid,
+                  //             width: 1.0),
+                  //         color: Colors.transparent,
+                  //         borderRadius: BorderRadius.circular(20.0)),
+                  //     child: Row(
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: <Widget>[
+                  //         // Center(
+                  //         //   child: ImageIcon(AssetImage("assets/facebook.png")),
+                  //         // ),
+                  //         SizedBox(width: 10.0),
+                  //         Center(
+                  //           child: Text(
+                  //             "Login with facebook",
+                  //             style: TextStyle(
+                  //                 fontWeight: FontWeight.bold,
+                  //                 fontFamily: "Montserrat"),
+                  //           ),
+                  //         )
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -278,7 +278,7 @@ class _LoginPageState extends State<LoginPage>
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Text(
-                  "New to Spotify ?",
+                  "You are new ?",
                   style: TextStyle(fontFamily: "Montserrat"),
                 ),
                 SizedBox(width: 5.0),

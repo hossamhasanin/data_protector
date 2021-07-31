@@ -1,3 +1,4 @@
+import 'package:base/Constants.dart';
 import 'package:data_protector/onboardingScreen/OnBoardingModel.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -7,7 +8,7 @@ class OnboardingController extends GetxController {
   List<OnboardingModel> pages = [
     OnboardingModel(
         image: "assets/images/onboarding1.png",
-        title: "Welcome To Data Protector",
+        title: "Welcome To $APP_NAME",
         desc:
             "We are here to keep you images safe and secure and just keep you reliefed"),
     OnboardingModel(

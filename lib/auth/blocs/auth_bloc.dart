@@ -1,8 +1,9 @@
-import 'package:data_protector/auth/AuthUseCase.dart';
-import 'package:data_protector/auth/blocs/auth_events.dart';
-import 'package:data_protector/auth/blocs/auth_states.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get_rx/get_rx.dart';
+
+import '../AuthUseCase.dart';
+import 'auth_events.dart';
+import 'auth_states.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthUseCase _authUseCase;

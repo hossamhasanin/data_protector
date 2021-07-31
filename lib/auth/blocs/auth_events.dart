@@ -1,4 +1,3 @@
-import 'package:data_protector/auth/blocs/auth_states.dart';
 import 'package:equatable/equatable.dart';
 
 class AuthEvent extends Equatable {

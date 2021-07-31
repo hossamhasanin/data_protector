@@ -1,3 +1,4 @@
+import 'package:base/Constants.dart';
 import 'package:data_protector/auth/widgets/LoginPage.dart';
 import 'package:data_protector/dependencies.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_events.dart';
@@ -18,7 +19,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Protect your data',
+      title: APP_NAME,
       home: MyHomePage(),
     );
   }
@@ -35,26 +36,38 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      // Initialize FlutterFire:
-      future: _initialization,
-      builder: (context, snapshot) {
-        // Check for errors
-        if (snapshot.hasError) {
-          return Scaffold(body: error(snapshot.error.toString()));
-        }
+    return Scaffold(
+      body: FutureBuilder(
+        // Initialize FlutterFire:
+        future: _initialization,
+        builder: (context, snapshot) {
+          // Check for errors
+          if (snapshot.hasError) {
+            return error(snapshot.error.toString());
+          }
 
-        // Once complete, show your application
-        if (snapshot.connectionState == ConnectionState.done) {
-          injection();
-          return box.hasData("notFirstTime") || box.read("notFirstTime") != null
-              ? LoginPage()
-              : OnboardingWidget();
-        }
+          // Once complete, show your application
+          if (snapshot.connectionState == ConnectionState.done) {
+            injection();
+            return box.hasData("notFirstTime") ||
+                    box.read("notFirstTime") != null
+                ? LoginPage()
+                : OnboardingWidget();
+            // return Container();
+            // if (box.hasData("notFirstTime") ||
+            //     box.read("notFirstTime") != null) {
+            //   Navigator.of(context).pushReplacement(
+            //       MaterialPageRoute(builder: (_) => LoginPage()));
+            // } else {
+            //   Navigator.of(context).pushReplacement(
+            //       MaterialPageRoute(builder: (_) => OnboardingWidget()));
+            // }
+          }
 
-        // Otherwise, show something whilst waiting for initialization to complete
-        return Scaffold(body: loading());
-      },
+          // Otherwise, show something whilst waiting for initialization to complete
+          return loading();
+        },
+      ),
     );
   }
 
