@@ -10,7 +10,9 @@ class DatabaseImble implements Database {
 
   @override
   Future<List<File>> getFiles(String path) {
-    var list = filesBox!.values.where((file) => file.path == path).toList();
+    List<File> list = filesBox!.values.toList();
+    // list = list.getRange(start, end)
+    list = list.where((file) => file.path == path).toList();
     list.sort((p, n) {
       return p.type.compareTo(n.type);
     });
@@ -21,7 +23,6 @@ class DatabaseImble implements Database {
   Future<void> initDatabase(String userId) async {
     if (!Hive.isAdapterRegistered(0)) {
       await Hive.initFlutter();
-      Hive.registerAdapter(FileAdapter());
       // filesBox = await Hive.openBox<File>("filesBox");
       filesBox = await Hive.openBox<File>(userId);
     }

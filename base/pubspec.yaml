@@ -13,9 +13,7 @@ dependencies:
   hive: ^2.0.4
   hive_flutter: ^1.1.0
   encrypt: ^5.0.0
-  firebase_core: ^1.4.0
-  firebase_auth: ^3.0.1
-  cloud_firestore: ^2.4.0
+
   equatable: ^2.0.3
   crypto: ^3.0.1
 

@@ -1,9 +1,11 @@
+import 'package:equatable/equatable.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:hive/hive.dart';
 
 part 'File.g.dart';
 
 @HiveType(typeId: 0)
-class File {
+class File extends Equatable {
   @HiveField(0)
   String id;
 
@@ -21,4 +23,18 @@ class File {
       required this.id,
       required this.path,
       required this.type});
+
+
+  @override
+  List<Object?> get props => [id , name , path , type];
+}
+
+
+class EmptyFile extends File{
+  EmptyFile() : super(
+      name: "",
+      id: "",
+      path: "",
+      type: -1
+  );
 }

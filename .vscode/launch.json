@@ -8,6 +8,7 @@
             "name": "data_protector",
             "request": "launch",
             "type": "dart",
+            "program": "lib/main.dart",
         },
         {
             "name": "base",

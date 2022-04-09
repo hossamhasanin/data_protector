@@ -4,7 +4,7 @@ class User extends Equatable {
   String id;
   String name;
   String email;
-  String? encryptionKey;
+  String encryptionKey;
 
   User(
       {required this.id,
@@ -13,7 +13,7 @@ class User extends Equatable {
       required this.name});
 
   factory User.init() {
-    return User(id: "", email: "", encryptionKey: null, name: "");
+    return User(id: "", email: "", encryptionKey: "", name: "");
   }
 
   @override
