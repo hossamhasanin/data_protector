@@ -3,6 +3,6 @@ enum DisplayImagesErrorCodes {
   exceededMaxDecryptNum,
   couldNotDeleteFiles,
   couldNotDecryptImages,
-  failedToCompressImages,
+  failedToShareImages,
   failedToImportImages,
 }

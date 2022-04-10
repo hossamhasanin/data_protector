@@ -290,7 +290,7 @@ class DisplayingImagesUseCase {
     } catch (e) {
       print("koko share encrypted images error > " + e.toString());
       return DataException(
-          "", DisplayImagesErrorCodes.failedToCompressImages.toString());
+          "", DisplayImagesErrorCodes.failedToShareImages.toString());
     }
   }
 

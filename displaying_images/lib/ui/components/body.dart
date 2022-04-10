@@ -1,3 +1,4 @@
+import 'package:displaying_images/displaying_images.dart';
 import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/controllers/folders_controller.dart';
 import 'package:displaying_images/logic/controllers/images_controller.dart';
@@ -61,7 +62,7 @@ class BodyState extends State<Body> {
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(dialogState.error),
+                        Text(_translateErrorCodes(dialogState.error)),
                         const SizedBox(
                           height: 10.0,
                         ),
@@ -335,5 +336,25 @@ class BodyState extends State<Body> {
             ),
           );
         });
+  }
+
+  String _translateErrorCodes(String code) {
+    if (code == DisplayImagesErrorCodes.couldNotDecryptImages.toString()) {
+      return "Could not decrypt images";
+    } else if (code == DisplayImagesErrorCodes.couldNotDeleteFiles.toString()) {
+      return "Could not delete files";
+    } else if (code == DisplayImagesErrorCodes.failedToShareImages.toString()) {
+      return "Could not share images";
+    } else if (code ==
+        DisplayImagesErrorCodes.exceededMaxDecryptNum.toString()) {
+      return "Exceeded max decrypt number";
+    } else if (code == DisplayImagesErrorCodes.couldNotDeleteFiles.toString()) {
+      return "Could not delete files";
+    } else if (code ==
+        DisplayImagesErrorCodes.failedToImportImages.toString()) {
+      return "Failed to import images";
+    } else {
+      throw "Not found error code";
+    }
   }
 }
