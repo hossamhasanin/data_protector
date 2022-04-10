@@ -1,4 +1,4 @@
-import 'package:displaying_images/logic/controller.dart';
+import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -7,12 +7,13 @@ import 'FolderCard.dart';
 import 'ImageCard.dart';
 
 class FilesGridView extends StatelessWidget {
-  
   final List<FileWrapper> images;
   final ScrollController scrollController;
   final DisplayingImagesController _controller = Get.find();
 
-  FilesGridView({Key? key , required this.images , required this.scrollController}) : super(key: key);
+  FilesGridView(
+      {Key? key, required this.images, required this.scrollController})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +21,7 @@ class FilesGridView extends StatelessWidget {
         controller: scrollController,
         padding: const EdgeInsets.all(8.0),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            mainAxisSpacing: 5.0,
-            crossAxisSpacing: 5.0),
+            crossAxisCount: 3, mainAxisSpacing: 5.0, crossAxisSpacing: 5.0),
         //semanticChildCount: images.length,
         itemCount: images.length,
         itemBuilder: (context, index) {
@@ -35,13 +34,12 @@ class FilesGridView extends StatelessWidget {
               selectionViewState: _controller.selectionViewState,
               index: index,
               onTap: () {
-                if (_controller.selectionViewState.value.isSelectingFolders){
+                if (_controller.selectionViewState.value.isSelectingFolders) {
                   _controller.selectFile(file.file.type, index);
                 } else {
                   // open the folder
-                  if (!_controller.selectionViewState.value.isSelectingImages){
-
-                  }
+                  if (!_controller
+                      .selectionViewState.value.isSelectingImages) {}
                 }
                 // if (!bloc.isImageSelecting.value &&
                 //     !bloc.isFolderSelecting.value) {
@@ -64,8 +62,7 @@ class FilesGridView extends StatelessWidget {
               onLongPress: () {
                 print("koko here");
                 if (!_controller.selectionViewState.value.isSelectingFolders &&
-                !_controller.selectionViewState.value.isSelectingImages
-                ){
+                    !_controller.selectionViewState.value.isSelectingImages) {
                   _controller.selectFile(file.file.type, index);
                 }
               },
@@ -77,25 +74,25 @@ class FilesGridView extends StatelessWidget {
                 selectionViewState: _controller.selectionViewState,
                 index: index,
                 onLongPress: () {
-                  if (!_controller.selectionViewState.value.isSelectingFolders &&
-                      !_controller.selectionViewState.value.isSelectingImages
-                  ){
+                  if (!_controller
+                          .selectionViewState.value.isSelectingFolders &&
+                      !_controller.selectionViewState.value.isSelectingImages) {
                     _controller.selectFile(file.file.type, index);
                   }
                 },
                 onTap: () {
-                  if (_controller.selectionViewState.value.isSelectingImages){
+                  if (_controller.selectionViewState.value.isSelectingImages) {
                     _controller.selectFile(file.file.type, index);
                   } else {
                     // open the image
-                    if (!_controller.selectionViewState.value.isSelectingFolders){
-
-                    }
+                    if (!_controller
+                        .selectionViewState.value.isSelectingFolders) {}
                   }
                 });
           } else {
             throw Exception("No matched file type");
           }
-        });;
+        });
+    ;
   }
 }

@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:base/Constants.dart';
-import 'package:displaying_images/logic/controller.dart';
+import 'package:displaying_images/logic/controllers/main_controller.dart';
+import 'package:displaying_images/logic/controllers/images_controller.dart';
 import 'package:displaying_images/ui/components/body.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_ui/shared_ui.dart';
@@ -11,6 +14,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 class DisplayingImagesScreen extends StatelessWidget {
   final DisplayingImagesController _controller =
       Get.put(DisplayingImagesController(Get.find(), Get.find()));
+  final ImagesController _imagesController = Get.find();
   final GlobalKey<AnimatedFloatingButtonState> animatedButtonKey = GlobalKey();
   final GlobalKey<BodyState> bodyKey = GlobalKey();
   DisplayingImagesScreen({Key? key}) : super(key: key);
@@ -48,6 +52,7 @@ class DisplayingImagesScreen extends StatelessWidget {
               List<Uint8List> thumbtList = [];
 
               try {
+                animatedButtonKey.currentState!.cancelButton();
                 final List<AssetEntity>? picked = await AssetPicker.pickAssets(
                     context,
                     pickerConfig: const AssetPickerConfig(
@@ -65,45 +70,24 @@ class DisplayingImagesScreen extends StatelessWidget {
                     thumbtList.add(thumb!);
                   }
                   print("koko thumbs size " + thumbtList.length.toString());
-                  _controller.encryptImages(resultList, thumbtList);
-                  animatedButtonKey.currentState!.cancelButton();
+                  _imagesController.encryptImages(resultList, thumbtList);
                 }
               } catch (e) {
                 // bloc.add(PickingImagesError(error: e.toString()));
               }
             },
             // import encrypted files to the app
-            () {}
+            () async {
+              FilePickerResult? result =
+                  await FilePicker.platform.pickFiles(allowMultiple: true);
+
+              if (result != null) {
+                List<File> files =
+                    result.paths.map((path) => File(path!)).toList();
+                _imagesController.importZipedImages(files);
+              }
+            }
           ]),
     );
-  }
-
-  Future showCreateNewFolderDialog(
-      BuildContext context, TextEditingController folderNameController) async {
-    await showCustomDialog(
-        context: context,
-        title: "Create new folder",
-        children: [
-          TextField(
-            decoration: const InputDecoration(
-                hintText: "Folder name ... ",
-                labelText: "Folder name",
-                hintStyle: TextStyle(color: Colors.grey)),
-            controller: folderNameController,
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                primary: Theme.of(context).primaryColor),
-            child: const Text(
-              "Create",
-              style: TextStyle(color: Colors.white),
-            ),
-            onPressed: () {
-              _controller.addFolder(folderNameController.text);
-              folderNameController.clear();
-              Navigator.pop(context);
-            },
-          )
-        ]);
   }
 }

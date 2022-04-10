@@ -1,4 +1,6 @@
-import 'package:displaying_images/logic/controller.dart';
+import 'package:displaying_images/logic/controllers/main_controller.dart';
+import 'package:displaying_images/logic/controllers/folders_controller.dart';
+import 'package:displaying_images/logic/controllers/images_controller.dart';
 import 'package:displaying_images/logic/helper_functions.dart';
 import 'package:displaying_images/ui/components/files_grid_view.dart';
 import 'package:displaying_images/ui/components/folders_selected_menu.dart';
@@ -19,6 +21,8 @@ class Body extends StatefulWidget {
 
 class BodyState extends State<Body> {
   final DisplayingImagesController _controller = Get.find();
+  final ImagesController _imagesController = Get.find();
+  final FoldersController _foldersController = Get.find();
   late final ScrollController _filesScrollController;
   BuildContext? dialogContext;
 
@@ -87,8 +91,8 @@ class BodyState extends State<Body> {
                                 Get.back();
                                 dialogContext = null;
                               }
-                              widget.animatedButtonKey.currentState!
-                                  .cancelButton();
+                              widget.animatedButtonKey.currentState
+                                  ?.cancelButton();
                             },
                             child: const Text("Done"))
                       ],
@@ -123,6 +127,8 @@ class BodyState extends State<Body> {
   @override
   void dispose() {
     _controller.dispose();
+    _foldersController.dispose();
+    _imagesController.dispose();
     _filesScrollController.dispose();
     folderName.dispose();
     super.dispose();
@@ -193,12 +199,14 @@ class BodyState extends State<Body> {
                       _controller.cancelSelecting();
                     },
                     decryptImages: () {
-                      _controller.decryptImagesToGallery();
+                      _imagesController.decryptImagesToGallery();
                     },
                     deleteImages: () {
                       _controller.deleteFiles();
                     },
-                    shareImages: () {},
+                    shareImages: () {
+                      _imagesController.shareImages();
+                    },
                   );
                 }
 
@@ -316,7 +324,7 @@ class BodyState extends State<Body> {
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        _controller.addFolder(folderName.text);
+                        _foldersController.addFolder(folderName.text);
                         Navigator.pop(context);
                       },
                       child: const Text("Create"),

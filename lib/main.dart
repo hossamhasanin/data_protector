@@ -20,7 +20,11 @@ void main() async {
   injection();
   UserSupplier supplier = UserSupplierImp();
   Encrypt encrypt = Get.find();
-  await supplier.cacheUser(User(id: "0", email: "koko", encryptionKey: encrypt.hash("koko"), name: "koko"));
+  await supplier.cacheUser(User(
+      id: "0",
+      email: "koko",
+      encryptionKey: encrypt.hash("popo"),
+      name: "koko"));
   runApp(MyApp());
 }
 

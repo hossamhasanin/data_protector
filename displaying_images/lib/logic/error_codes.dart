@@ -2,5 +2,7 @@ enum DisplayImagesErrorCodes {
   fileNameAlreadyExists,
   exceededMaxDecryptNum,
   couldNotDeleteFiles,
-  couldNotDecryptImages
+  couldNotDecryptImages,
+  failedToCompressImages,
+  failedToImportImages,
 }

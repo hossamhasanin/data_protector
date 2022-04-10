@@ -8,6 +8,8 @@ import 'package:base/datasource/File.dart';
 import 'package:base/encrypt/Encrypt.dart';
 import 'package:displaying_images/displaying_images.dart';
 import 'package:displaying_images/logic/GetImagesStreamWrapper.dart';
+import 'package:displaying_images/logic/controllers/folders_controller.dart';
+import 'package:displaying_images/logic/controllers/images_controller.dart';
 import 'package:displaying_images/logic/datasource.dart';
 import 'package:displaying_images/logic/viewstates/dialog_state.dart';
 import 'package:displaying_images/logic/decrypt_isolate_vars.dart';
@@ -42,6 +44,8 @@ class DisplayingImagesController extends GetxController {
   DisplayingImagesController(
       DisplayingImagesDataSource dataSource, Encrypt encrypt) {
     _useCase = DisplayingImagesUseCase(dataSource, encrypt);
+    Get.put(FoldersController(this, _useCase));
+    Get.put(ImagesController(this, _useCase));
   }
 
   selectFile(int fileType, int index) {
@@ -80,56 +84,6 @@ class DisplayingImagesController extends GetxController {
         selectedFiles: {}, isSelectingImages: false, isSelectingFolders: false);
   }
 
-  decryptImagesToGallery() async {
-    if (selectionViewState.value.isSelectingFolders) {
-      return;
-    }
-
-    showStateDialog();
-    dialogState.value = dialogState.value
-        .copy(loading: true, error: "", doneMessage: "", isDone: false);
-    if (selectionViewState.value.selectedFiles.length > MAX_DECRYPT_IMAGES) {
-      dialogState.value = dialogState.value.copy(
-          loading: false,
-          error: DisplayImagesErrorCodes.exceededMaxDecryptNum.toString());
-      return;
-    }
-
-    List<Future> imageDecryptTasks = [];
-
-    Map<int, FileWrapper> files = {
-      for (var e = 0; e < viewState.value.files.length; e++)
-        e: viewState.value.files[e]
-    };
-    for (var selected in selectionViewState.value.selectedFiles.keys) {
-      imageDecryptTasks.add(
-          _useCase.decryptImagesBackToGallery(viewState.value.files[selected]));
-      files.remove(selected);
-    }
-
-    var result = await Future.wait(imageDecryptTasks);
-
-    if (result.contains(DataException(
-        "", DisplayImagesErrorCodes.couldNotDecryptImages.toString()))) {
-      dialogState.value = dialogState.value.copy(
-          loading: false,
-          isDone: false,
-          doneMessage: "",
-          error: DisplayImagesErrorCodes.couldNotDecryptImages.toString());
-    } else {
-      dialogState.value = dialogState.value.copy(
-          loading: false,
-          doneMessage: "Decrypting files done successfully",
-          isDone: true,
-          error: "");
-    }
-
-    selectionViewState.value = selectionViewState.value.copy(
-        selectedFiles: {}, isSelectingImages: false, isSelectingFolders: false);
-
-    viewState.value = viewState.value.copy(files: files.values.toList());
-  }
-
   deleteFiles() async {
     showStateDialog();
     dialogState.value = dialogState.value
@@ -166,50 +120,6 @@ class DisplayingImagesController extends GetxController {
 
     selectionViewState.value = selectionViewState.value.copy(
         selectedFiles: {}, isSelectingImages: false, isSelectingFolders: false);
-  }
-
-  addFolder(String fileName) async {
-    File file = File(
-        name: fileName, id: "0", path: "/", type: SavedFileType.FOLDER.index);
-    var wrapper = FileWrapper(file: file);
-    var files = List<FileWrapper>.from(viewState.value.files);
-    files.insert(0, wrapper);
-    viewState.value = viewState.value.copy(files: files);
-    var result = await _useCase.addNewFolder(file);
-    if (result is DataException) {
-      //TODO: Show error message
-
-      print("koko error > " + result.code);
-      // Delete the item back from the list
-      files.remove(wrapper);
-      viewState.value = viewState.value.copy(files: files);
-    }
-  }
-
-  encryptImages(List<Uint8List> images, List<Uint8List> thumps) async {
-    print("koko encrypt > " + images.length.toString());
-    var files = List<FileWrapper>.from(viewState.value.files);
-    List<Future> imagesEncryptionTask = [];
-
-    for (var i = 0; i < images.length; i++) {
-      var file = await _useCase.createImageFile(currentPath.value);
-      var wrapper = FileWrapper(
-          file: file, uint8list: images[i], thumbUint8list: thumps[i]);
-      files.add(wrapper);
-
-      imagesEncryptionTask.add(_useCase.encryptImage(wrapper, encryptionKey));
-    }
-    viewState.value = viewState.value.copy(files: files);
-
-    var tasksResults = Future.wait(imagesEncryptionTask);
-    tasksResults.then((results) {
-      for (var result in results) {
-        if (result is DataException) {
-          // TODO: show encryption error
-          print("koko encryption error > " + result.code);
-        }
-      }
-    });
   }
 
   getUser() async {

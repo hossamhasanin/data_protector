@@ -12,9 +12,11 @@ import 'package:displaying_images/logic/datasource.dart';
 import 'package:displaying_images/logic/decrypt_isolate_vars.dart';
 import 'package:displaying_images/logic/error_codes.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
+import 'package:flutter_archive/flutter_archive.dart';
 import 'package:image/image.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share/share.dart';
 import 'package:stream_channel/isolate_channel.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
@@ -29,22 +31,27 @@ fetchFilesIsolate(DecryptIsolateVars vars) async {
   IsolateChannel state = IsolateChannel.connectSend(statePort);
   SendPort deletingFilesPort = vars.deleteFilesPort;
   Queue<List<F.File>> files = vars.newToLoadFiles;
-  Future<FileWrapper> decryptImage(file, key) async =>
-      await vars.useCase.decryptImage(file, key, platformDir);
+  Future<FileWrapper> decryptImage(file, key) {
+    print("koko decrypt now");
+    return vars.useCase.decryptImage(file, key, platformDir);
+  }
+
   var deletingFilesChannel = IsolateChannel.connectSend(deletingFilesPort);
 
   print("koko > all files in database is " + files.length.toString());
 
   if (files.isNotEmpty) {
     while (files.isNotEmpty) {
-      List<Future<FileWrapper>> batchFiles = [];
-      for (var file in files.removeFirst()) {
+      List<Future<FileWrapper> Function()> batchFiles = [];
+      var fileLists = files.removeFirst();
+      for (var file in fileLists) {
         if (vars.loadedFiles.contains(file)) {
           continue;
         }
 
         if (file.type == SavedFileType.IMAGE.index) {
-          batchFiles.add(decryptImage(file, key));
+          print("koko I am working here ");
+          batchFiles.add(() => decryptImage(file, key));
         } else {
           var isFolderExist =
               await Directory(platformDir + path + file.name).exists();
@@ -59,16 +66,33 @@ fetchFilesIsolate(DecryptIsolateVars vars) async {
 
             print("koko error loading the images > files error");
           } else {
-            batchFiles.add(Future.value(FileWrapper(
+            batchFiles.add(() => Future.value(FileWrapper(
                 file: file, uint8list: null, thumbUint8list: null)));
           }
         }
       }
-      var decryptedFiles = await Future.wait(batchFiles);
-      GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
-          images: decryptedFiles, done: false, error: "");
-      state.sink.add(imagesStreamWrapper);
-      batchFiles.clear();
+      try {
+        // var s = Stopwatch();
+        // s.start();
+        var decryptedFiles = await Future.wait(batchFiles.map((e) => e()));
+        // print("koko execution time decrypting " +
+        //     s.elapsed.inMilliseconds.toString());
+        GetImagesStreamWrapper imagesStreamWrapper = GetImagesStreamWrapper(
+            images: decryptedFiles, done: false, error: "");
+        state.sink.add(imagesStreamWrapper);
+        batchFiles.clear();
+      } catch (e) {
+        print("koko error loading the images > " + e.toString());
+
+        for (var file in fileLists) {
+          deletingFilesChannel.sink.add(file);
+        }
+        var imagesStreamWrapper = GetImagesStreamWrapper(
+            images: [],
+            done: false,
+            error: "Can't decrypt those images , their key is diffrent");
+        state.sink.add(imagesStreamWrapper);
+      }
       // await Future.delayed(Duration(seconds: 3));
     }
 
@@ -239,6 +263,86 @@ class DisplayingImagesUseCase {
       print("koko decrypt images to gallery error > " + e.toString());
       return DataException(
           "", DisplayImagesErrorCodes.couldNotDecryptImages.toString());
+    }
+  }
+
+  // create function to share encrypted images to other apps
+  Future<dynamic> shareEncryptedImages(
+      List<FileWrapper> images, String path) async {
+    try {
+      var dir = await getExternalStorageDirectory();
+      // map images to File io objects
+      List<File> files = [];
+      for (var image in images) {
+        files.add(File(dir!.path + image.file.path + image.file.name));
+        files.add(
+            File(dir.path + image.file.path + getThumbName(image.file.name)));
+      }
+      // create a File io object to store zip file with name of current time stamp
+      var zipFile =
+          File("${dir!.path}/${DateTime.now().millisecondsSinceEpoch}.zip");
+      await ZipFile.createFromFiles(
+          sourceDir: Directory(dir.path + path),
+          files: files,
+          zipFile: zipFile);
+      // share the zip file
+      await Share.shareFiles([zipFile.path]);
+    } catch (e) {
+      print("koko share encrypted images error > " + e.toString());
+      return DataException(
+          "", DisplayImagesErrorCodes.failedToCompressImages.toString());
+    }
+  }
+
+  Future<dynamic> importEncryptedImages(
+      File zipFile, String path, String encKey) async {
+    try {
+      var dir = await getExternalStorageDirectory();
+      // create a Directory object to store encrypted images
+      var encryptedImagesPath =
+          await Directory(dir!.path + path).create(recursive: true);
+
+      List<Future<FileWrapper> Function()> filesDecryptingTask = [];
+      await ZipFile.extractToDirectory(
+          zipFile: zipFile,
+          destinationDir: encryptedImagesPath,
+          onExtracting: (zFile, progress) {
+            print("koko extracting ${zFile.name} $progress");
+
+            if (!zFile.name.endsWith(".$ENC_EXTENSION")) {
+              throw DataException(
+                  "", DisplayImagesErrorCodes.failedToImportImages.toString());
+            }
+
+            if (!zFile.name.contains(THUMB_FILE_ENC_EXTENSION)) {
+              // print("koko thumb file");
+              var dateTime = DateTime.now()
+                  .toUtc()
+                  .toIso8601String()
+                  .replaceAll("-", "_")
+                  .replaceAll(":", "_");
+              var imageFile = F.File(
+                  id: dateTime,
+                  name: zFile.name,
+                  path: path,
+                  type: SavedFileType.IMAGE.index);
+
+              filesDecryptingTask
+                  .add(() => decryptImage(imageFile, encKey, dir.path));
+              _dataSource.addFile(imageFile);
+            }
+
+            return ZipFileOperation.includeItem;
+          });
+      await deletePhysicalFile(zipFile.path);
+      // for (var item in f) {
+      //   filesDecryptingTask.add(decryptImage(item, encKey, dir.path));
+      // }
+      return await Future.wait(filesDecryptingTask.map((e) => e()));
+    } catch (e) {
+      print("koko import encrypted images error > " + e.toString());
+      return DataException(
+          "", DisplayImagesErrorCodes.failedToImportImages.toString());
     }
   }
 }
