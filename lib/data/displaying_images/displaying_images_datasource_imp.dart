@@ -16,16 +16,21 @@ class DisplayingImagesDataSourceImp implements DisplayingImagesDataSource {
     initDatabase();
   }
 
+  Future<Box<Map>> getFilesBox() async {
+    var filesBox = await Hive.openBox<Map>("files");
+    return filesBox;
+  }
+
   @override
   Future<void> deleteFile(File file) async {
-    var filesBox = await Hive.openBox<List>("files");
+    var filesBox = await getFilesBox();
     if (file.type == SavedFileType.FOLDER.index) {
       await filesBox.delete(file.path + "/" + file.name);
     }
-    var list = filesBox.get(file.path);
-    var r = list!.remove(file);
+    var map = filesBox.get(file.path);
+    var r = map!.remove(file.name);
     print("koko deleted " + r.toString());
-    await filesBox.put(file.path, list);
+    await filesBox.put(file.path, map);
   }
 
   @override
@@ -58,9 +63,9 @@ class DisplayingImagesDataSourceImp implements DisplayingImagesDataSource {
   @override
   Future<List<File>> getFiles(String path, int lastFileIndex,
       {int pageSize = MAX_PAGE_SIZE}) async {
-    var filesBox = await Hive.openBox<List>("files");
     print("koko get files current path " + path);
-    var list = filesBox.get(path)!;
+    var filesBox = await getFilesBox();
+    var list = filesBox.get(path)!.values.toList();
     print("koko total amount of files > " + list.length.toString());
     list.sort((p, n) {
       return p.type.compareTo(n.type);
@@ -87,15 +92,15 @@ class DisplayingImagesDataSourceImp implements DisplayingImagesDataSource {
 
   @override
   Future addFile(File file) async {
-    var filesBox = await Hive.openBox<List>("files");
+    var filesBox = await getFilesBox();
     // var parentPath = getParentPath(file.path);
     if (filesBox.containsKey(file.path)) {
-      var list = filesBox.get(file.path);
-      if (!list!.contains(file)) {
-        list.add(file);
-        await filesBox.put(file.path, list);
+      Map? map = filesBox.get(file.path);
+      if (map![file.name] == null) {
+        map[file.name] = file;
+        await filesBox.put(file.path, map);
         if (file.type == SavedFileType.FOLDER.index) {
-          await filesBox.put(file.path + "/" + file.name, []);
+          await filesBox.put(file.path + "/" + file.name, {});
         }
       } else {
         throw DataException(
@@ -106,10 +111,10 @@ class DisplayingImagesDataSourceImp implements DisplayingImagesDataSource {
 
   @override
   Future initDatabase() async {
-    var filesBox = await Hive.openBox<List>("files");
+    var filesBox = await getFilesBox();
     if (!filesBox.containsKey("/")) {
       print("koko init database and create default directory");
-      filesBox.put("/", []);
+      filesBox.put("/", {});
     }
   }
 

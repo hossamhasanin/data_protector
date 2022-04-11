@@ -146,28 +146,25 @@ class ImagesController extends GetxController {
         .map((zFile) => _useCase.importEncryptedImages(
             zFile, _controller.currentPath.value, _controller.encryptionKey))
         .toList();
-    var result = await Future.wait(extractFilesTasks);
-    if (result.contains(DataException(
-        "", DisplayImagesErrorCodes.failedToImportImages.toString()))) {
-      _controller.dialogState.value = _controller.dialogState.value.copy(
-          loading: false,
-          isDone: false,
-          doneMessage: "",
-          error: "Importing failed");
-    } else {
-      List imagesGroups = List.from(result);
-      List<FileWrapper> files = List.from(_controller.viewState.value.files);
-      for (var imagesGroup in imagesGroups) {
-        files.addAll(List<FileWrapper>.from(imagesGroup));
-      }
-      _controller.viewState.value =
-          _controller.viewState.value.copy(files: files);
+    var results = await Future.wait(extractFilesTasks);
 
-      _controller.dialogState.value = _controller.dialogState.value.copy(
-          loading: false,
-          doneMessage: "Imported images done successfully",
-          isDone: true,
-          error: "");
+    for (var result in results) {
+      if (result is DataException) {
+        _controller.dialogState.value = _controller.dialogState.value.copy(
+            loading: false, isDone: false, doneMessage: "", error: result.code);
+      } else if (result is List<FileWrapper>) {
+        List<FileWrapper> files = List.from(_controller.viewState.value.files);
+        files.addAll(List<FileWrapper>.from(result));
+
+        _controller.viewState.value =
+            _controller.viewState.value.copy(files: files);
+
+        _controller.dialogState.value = _controller.dialogState.value.copy(
+            loading: false,
+            doneMessage: "Imported images done successfully",
+            isDone: true,
+            error: "");
+      }
     }
   }
 }

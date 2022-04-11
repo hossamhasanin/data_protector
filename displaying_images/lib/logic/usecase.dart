@@ -327,9 +327,10 @@ class DisplayingImagesUseCase {
                   path: path,
                   type: SavedFileType.IMAGE.index);
 
-              filesDecryptingTask
-                  .add(() => decryptImage(imageFile, encKey, dir.path));
-              _dataSource.addFile(imageFile);
+              filesDecryptingTask.add(() async {
+                await _dataSource.addFile(imageFile);
+                return decryptImage(imageFile, encKey, dir.path);
+              });
             }
 
             return ZipFileOperation.includeItem;
@@ -339,6 +340,8 @@ class DisplayingImagesUseCase {
       //   filesDecryptingTask.add(decryptImage(item, encKey, dir.path));
       // }
       return await Future.wait(filesDecryptingTask.map((e) => e()));
+    } on DataException catch (e) {
+      return e;
     } catch (e) {
       print("koko import encrypted images error > " + e.toString());
       return DataException(

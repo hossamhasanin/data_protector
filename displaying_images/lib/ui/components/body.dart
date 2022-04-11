@@ -339,6 +339,7 @@ class BodyState extends State<Body> {
   }
 
   String _translateErrorCodes(String code) {
+    print(code);
     if (code == DisplayImagesErrorCodes.couldNotDecryptImages.toString()) {
       return "Could not decrypt images";
     } else if (code == DisplayImagesErrorCodes.couldNotDeleteFiles.toString()) {
@@ -353,6 +354,9 @@ class BodyState extends State<Body> {
     } else if (code ==
         DisplayImagesErrorCodes.failedToImportImages.toString()) {
       return "Failed to import images";
+    } else if (code ==
+        DisplayImagesErrorCodes.fileNameAlreadyExists.toString()) {
+      return "This file is here already";
     } else {
       throw "Not found error code";
     }
