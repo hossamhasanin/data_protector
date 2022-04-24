@@ -443,6 +443,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.4"
+  share_images:
+    dependency: "direct main"
+    description:
+      path: share_images
+      relative: true
+    source: path
+    version: "1.0.0+1"
   shared_ui:
     dependency: transitive
     description:
@@ -553,6 +560,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "7.1.0"
+  wifi_p2p:
+    dependency: "direct main"
+    description:
+      path: wifi_p2p
+      relative: true
+    source: path
+    version: "0.0.1"
   win32:
     dependency: transitive
     description:

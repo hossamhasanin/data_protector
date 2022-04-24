@@ -1,3 +1,8 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:base/Constants.dart';
+import 'package:base/base.dart';
 import 'package:displaying_images/displaying_images.dart';
 import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/controllers/folders_controller.dart';
@@ -8,9 +13,13 @@ import 'package:displaying_images/ui/components/folders_selected_menu.dart';
 import 'package:displaying_images/ui/components/images_selected_menu.dart';
 import 'package:displaying_images/ui/components/main_menu.dart';
 import 'package:displaying_images/ui/components/path_text_widget.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_ui/shared_ui.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+import 'package:wifi_p2p/device.dart';
+import 'package:wifi_p2p/wifi_p2p.dart';
 
 class Body extends StatefulWidget {
   final GlobalKey<AnimatedFloatingButtonState> animatedButtonKey;
@@ -28,6 +37,7 @@ class BodyState extends State<Body> {
   BuildContext? dialogContext;
 
   TextEditingController folderName = TextEditingController();
+  List<Device> devices = [];
 
   @override
   void initState() {
@@ -105,6 +115,155 @@ class BodyState extends State<Body> {
               ),
             );
           });
+    };
+
+    _imagesController.showSelectShareMethodeDialog = () {
+      showModalBottomSheet(
+          context: context,
+          builder: (_) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const ListTile(
+                  title: Text("Share via"),
+                  leading: Icon(Icons.share),
+                ),
+                ListTile(
+                  title: const Text("Share images encrypted"),
+                  leading: const Icon(Icons.share),
+                  onTap: () {
+                    _imagesController.shareImages();
+                    Get.back();
+                  },
+                ),
+                ListTile(
+                  title: const Text("Share images decrypted"),
+                  leading: const Icon(Icons.share),
+                  onTap: () async {
+                    Get.back();
+                    _imagesController.showDecryptingImagesToShareDialog();
+                    var images = await _imagesController.getSelectedImages();
+                    Get.back();
+                    Get.toNamed(sendImagesScreen, arguments: images);
+                  },
+                ),
+              ],
+            );
+          });
+    };
+
+    _imagesController.showSelectReceivingMethodeDialog = () {
+      showModalBottomSheet(
+          context: context,
+          builder: (_) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const ListTile(
+                  title: Text("Receive via"),
+                  leading: Icon(Icons.share),
+                ),
+                ListTile(
+                  title: const Text("Receive images encrypted"),
+                  leading: const Icon(Icons.share),
+                  onTap: () async {
+                    Get.back();
+                    FilePickerResult? result = await FilePicker.platform
+                        .pickFiles(allowMultiple: true);
+
+                    if (result != null) {
+                      List<File> files =
+                          result.paths.map((path) => File(path!)).toList();
+                      _imagesController.importZipedImages(files);
+                    }
+                  },
+                ),
+                ListTile(
+                  title: const Text("Receive images decrypted"),
+                  leading: const Icon(Icons.share),
+                  onTap: () {
+                    Get.back();
+                    Get.toNamed(receiveImagesScreen);
+                  },
+                ),
+              ],
+            );
+          });
+    };
+
+    _imagesController.showDecryptingImagesToShareDialog = () {
+      showCustomDialog(context: context, title: "Decrypting ...", children: [
+        const CircularProgressIndicator(),
+        const SizedBox(
+          height: 10.0,
+        ),
+        const Text("Wait a sec this could take some time ...")
+      ]);
+    };
+
+    _imagesController.showEncryptionStateDialog = () {
+      dialogContext = context;
+      showDialog(
+          context: dialogContext!,
+          builder: (_) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0)),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Obx(() {
+                  var dialogState = _imagesController.encryptionState.value;
+                  print("koko dialog state " + dialogState.toString());
+                  if (dialogState.encryptionError.isNotEmpty) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_translateErrorCodes(dialogState.encryptionError)),
+                        const SizedBox(
+                          height: 10.0,
+                        ),
+                        ElevatedButton(
+                            onPressed: () {
+                              if (dialogContext != null) {
+                                Get.back();
+                                dialogContext = null;
+                              }
+                            },
+                            child: const Text("Okay"))
+                      ],
+                    );
+                  }
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        value: dialogState.encryptionProgress == 0
+                            ? null
+                            : dialogState.encryptionProgress,
+                      ),
+                      const SizedBox(
+                        height: 10.0,
+                      ),
+                      Text(dialogState.encryptionSuccess
+                          ? dialogState.encryptionSuccessMessage
+                          : dialogState.encryptionLoadingMessage),
+                      if (dialogState.encryptionSuccess)
+                        ElevatedButton(
+                            onPressed: () {
+                              if (dialogContext != null) {
+                                Get.back();
+                                dialogContext = null;
+                              }
+                            },
+                            child: const Text("Done"))
+                    ],
+                  );
+                }),
+              ),
+            );
+          },
+          barrierDismissible: false);
     };
 
     _controller.loadFiles();
@@ -205,22 +364,22 @@ class BodyState extends State<Body> {
                     deleteImages: () {
                       _controller.deleteFiles();
                     },
-                    shareImages: () {
-                      _imagesController.shareImages();
+                    shareImages: () async {
+                      _imagesController.showSelectShareMethodeDialog();
                     },
                   );
                 }
 
                 if (selectionViewState.isSelectingFolders) {
-                  return FolderSelectedMenu(
-                      deleteAllFolders: () {
-                        _controller.deleteFiles();
-                      },
-                      cancelSelecting: () {});
+                  return FolderSelectedMenu(deleteAllFolders: () {
+                    _controller.deleteFiles();
+                  }, cancelSelecting: () {
+                    _controller.cancelSelecting();
+                  });
                 }
 
                 return MainMenu(
-                  goToAboutUs: () {},
+                  goToAboutUs: () async {},
                 );
               })
               // Obx(() => buildMenuesRow())
@@ -357,6 +516,9 @@ class BodyState extends State<Body> {
     } else if (code ==
         DisplayImagesErrorCodes.fileNameAlreadyExists.toString()) {
       return "This file is here already";
+    } else if (code ==
+        DisplayImagesErrorCodes.couldNotEncryptImages.toString()) {
+      return "Could not encrypt images";
     } else {
       throw "Not found error code";
     }

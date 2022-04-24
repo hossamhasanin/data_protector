@@ -12,6 +12,8 @@ const titleTextStyle =
     TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20);
 final subTitleTextStyle = TextStyle(
     color: Colors.grey[800], fontWeight: FontWeight.w600, fontSize: 18);
+final subTitleTextStyleWhite =
+    TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18);
 final ratingTextStyle = TextStyle(
     color: Colors.grey[800], fontWeight: FontWeight.w500, fontSize: 20);
 const detailsTitleTextStyle =

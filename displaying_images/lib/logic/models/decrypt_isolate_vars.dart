@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'package:base/datasource/File.dart' as F;
 import 'package:displaying_images/logic/usecase.dart';
-import 'image_file_wrapper.dart';
+import '../image_file_wrapper.dart';
 
 class DecryptIsolateVars {
   final SendPort isolateStatePort;
@@ -15,18 +15,13 @@ class DecryptIsolateVars {
   final List<FileWrapper> loadedFiles;
   final DisplayingImagesUseCase useCase;
 
-
   DecryptIsolateVars(
       {required this.isolateStatePort,
-        required this.currentPath,
-        required this.key,
-        required this.platformDirPath,
-        required this.deleteFilesPort,
-        required this.newToLoadFiles,
-        required this.loadedFiles,
-        required this.useCase
-      });
-
-
-
+      required this.currentPath,
+      required this.key,
+      required this.platformDirPath,
+      required this.deleteFilesPort,
+      required this.newToLoadFiles,
+      required this.loadedFiles,
+      required this.useCase});
 }

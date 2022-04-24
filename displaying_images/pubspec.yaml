@@ -44,6 +44,8 @@ dependencies:
     path: ../base
   shared_ui:
     path: ../shared_ui
+  wifi_p2p:
+    path: ../wifi_p2p
 
 dev_dependencies:
   flutter_test:

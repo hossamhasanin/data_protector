@@ -30,13 +30,21 @@ class FolderCard extends StatelessWidget {
       },
       child: Stack(
         children: [
-          Obx(() => selectionViewState.value.selectedFiles[index] != null
-              ? Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  decoration: const BoxDecoration(color: Colors.grey),
-                )
-              : Container()),
+          Obx(() {
+            return AnimatedOpacity(
+              opacity: selectionViewState.value.selectedFiles[index] != null
+                  ? 1.0
+                  : 0.0,
+              duration: const Duration(milliseconds: 100),
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.all(Radius.circular(20))),
+              ),
+            );
+          }),
           Container(
               color: Colors.transparent,
               width: double.infinity,
@@ -54,10 +62,15 @@ class FolderCard extends StatelessWidget {
                     height: 10.0,
                   ),
                   Expanded(
-                    child: Text(
-                      folder.file.name,
-                      style: subTitleTextStyle,
-                    ),
+                    child: Obx(() {
+                      return Text(
+                        folder.file.name,
+                        style: selectionViewState.value.selectedFiles[index] !=
+                                null
+                            ? subTitleTextStyleWhite
+                            : subTitleTextStyle,
+                      );
+                    }),
                   )
                 ],
               ))

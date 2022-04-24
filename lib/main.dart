@@ -7,11 +7,14 @@ import 'package:data_protector/data/user/user_supplier_imp.dart';
 import 'package:data_protector/dependencies.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_events.dart';
 import 'package:data_protector/onboardingScreen/OnboardingWidget.dart';
+import 'package:displaying_images/ui/t.dart';
 import 'package:displaying_images/ui/displaying_images_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:share_images/ui/receiving/receiving_screen.dart';
+import 'package:share_images/ui/sending/sending_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,8 +38,14 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: APP_NAME,
-      // home: MyHomePage(),
+      getPages: [
+        GetPage(name: sendImagesScreen, page: () => SendingScreen()),
+        GetPage(name: receiveImagesScreen, page: () => ReceivingScreen()),
+        GetPage(
+            name: displayingImagesScreen, page: () => DisplayingImagesScreen()),
+      ],
       home: DisplayingImagesScreen(),
+      // home: TestPackage(),
     );
   }
 }

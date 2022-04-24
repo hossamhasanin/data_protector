@@ -9,9 +9,11 @@ import 'package:base/datasource/File.dart' as F;
 import 'package:base/encrypt/encryption.dart';
 import 'package:base/models/user.dart';
 import 'package:displaying_images/logic/datasource.dart';
-import 'package:displaying_images/logic/decrypt_isolate_vars.dart';
+import 'package:displaying_images/logic/models/decrypt_isolate_vars.dart';
 import 'package:displaying_images/logic/error_codes.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
+import 'package:displaying_images/logic/models/decrypt_to_gallery_vars.dart';
+import 'package:displaying_images/logic/models/encrypt_isolate_vars.dart';
 import 'package:flutter_archive/flutter_archive.dart';
 import 'package:image/image.dart';
 import 'package:path_provider/path_provider.dart';
@@ -22,6 +24,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 import 'GetImagesStreamWrapper.dart';
 import 'helper_functions.dart';
+import 'package:flutter/material.dart' as material;
 
 fetchFilesIsolate(DecryptIsolateVars vars) async {
   SendPort statePort = vars.isolateStatePort;
@@ -33,7 +36,7 @@ fetchFilesIsolate(DecryptIsolateVars vars) async {
   Queue<List<F.File>> files = vars.newToLoadFiles;
   Future<FileWrapper> decryptImage(file, key) {
     print("koko decrypt now");
-    return vars.useCase.decryptImage(file, key, platformDir);
+    return vars.useCase.decryptThumb(file, key, platformDir);
   }
 
   var deletingFilesChannel = IsolateChannel.connectSend(deletingFilesPort);
@@ -66,8 +69,8 @@ fetchFilesIsolate(DecryptIsolateVars vars) async {
 
             print("koko error loading the images > files error");
           } else {
-            batchFiles.add(() => Future.value(FileWrapper(
-                file: file, uint8list: null, thumbUint8list: null)));
+            batchFiles.add(() =>
+                Future.value(FileWrapper(file: file, thumbUint8list: null)));
           }
         }
       }
@@ -106,6 +109,72 @@ fetchFilesIsolate(DecryptIsolateVars vars) async {
   }
 }
 
+Future encryptFilesIsolate(EncryptIsolateVars vars) async {
+  List<Future<List<Uint8List>> Function()> encryptTasks = [];
+
+  for (var image in vars.images) {
+    var imageBytes = File(image.imageApsolutePath).readAsBytesSync();
+    encryptTasks.add(() => vars.useCase.encryptImage(
+        FileWrapper(file: image.file!, thumbUint8list: image.thumbnail),
+        imageBytes,
+        vars.key,
+        vars.osDir));
+  }
+
+  try {
+    print("koko > all files are encrypting");
+    var result = await Future.wait(encryptTasks.map((e) => e()));
+    print("koko > all files encrypted");
+    Isolate.exit(vars.isolateStatePort, result);
+  } catch (e) {
+    print("koko error " + e.toString());
+    Isolate.exit(
+        vars.isolateStatePort,
+        DataException(e.toString(),
+            DisplayImagesErrorCodes.couldNotEncryptImages.toString()));
+  }
+}
+
+Future decryptImageIsolate(DecryptToGalleryVars vars) async {
+  List<Future<Uint8List> Function()> decryptTasks = [];
+
+  for (var image in vars.files) {
+    decryptTasks
+        .add(() => vars.useCase.decryptImage(image, vars.key, vars.osDir));
+  }
+
+  try {
+    var result = await Future.wait(decryptTasks.map((e) => e()));
+
+    Isolate.exit(vars.isolateStatePort, result);
+  } catch (e) {
+    Isolate.exit(
+        vars.isolateStatePort,
+        DataException(e.toString(),
+            DisplayImagesErrorCodes.couldNotDecryptImages.toString()));
+  }
+}
+
+// Future decryptImagesToMemory(DecryptToGalleryVars vars) async {
+//   List<Future<Uint8List> Function()> decryptTasks = [];
+//   var dir = await getExternalStorageDirectory();
+//   for (var image in vars.files) {
+//     decryptTasks
+//         .add(() => vars.useCase.decryptImage(image, vars.key, dir!.path));
+//   }
+
+//   try {
+//     var images = await Future.wait(decryptTasks.map((e) => e()));
+
+//     Isolate.exit(vars.isolateStatePort, images);
+//   } catch (e) {
+//     Isolate.exit(
+//         vars.isolateStatePort,
+//         DataException(e.toString(),
+//             DisplayImagesErrorCodes.couldNotDecryptImages.toString()));
+//   }
+// }
+
 class DisplayingImagesUseCase {
   final DisplayingImagesDataSource _dataSource;
   final Encrypt _encrypt;
@@ -135,13 +204,10 @@ class DisplayingImagesUseCase {
     return filesQueue;
   }
 
-  Future<FileWrapper> decryptImage(
+  Future<FileWrapper> decryptThumb(
       F.File file, String key, String platformDir) async {
     print("dec im path > " + "$platformDir${file.path}${file.name}");
-    var encImageFile =
-        File("$platformDir${file.path}${file.name}").readAsBytesSync();
 
-    var decImageFile = _encrypt.decrypt(encImageFile, key);
     Uint8List decThumbFile;
 
     var thumbName = getThumbName(file.name);
@@ -152,6 +218,10 @@ class DisplayingImagesUseCase {
       decThumbFile = _encrypt.decrypt(encThumbFile.readAsBytesSync(), key);
     } else {
       print("koko thumb with name $thumbName not seen");
+      var encImageFile =
+          File("$platformDir${file.path}${file.name}").readAsBytesSync();
+
+      var decImageFile = _encrypt.decrypt(encImageFile, key);
       Image image = decodeImage(decImageFile)!;
 
       // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
@@ -166,23 +236,38 @@ class DisplayingImagesUseCase {
       print("koko made your thumb file go and see it ");
     }
 
-    return FileWrapper(
-        file: file, uint8list: decImageFile, thumbUint8list: decThumbFile);
+    return FileWrapper(file: file, thumbUint8list: decThumbFile);
   }
 
-  Future encryptImage(FileWrapper image, String key) async {
-    var dir = await getExternalStorageDirectory();
+  Future<Uint8List> decryptImage(
+      F.File file, String key, String platformDir) async {
+    var encImageFile =
+        File("$platformDir${file.path}${file.name}").readAsBytesSync();
+    var decryptedImage = _encrypt.decrypt(encImageFile, key);
+    return decryptedImage;
+  }
 
-    var imagePath = "${dir!.path}${image.file.path}${image.file.name}";
+  Future<List<Uint8List>> encryptImage(FileWrapper imageWrapper,
+      Uint8List image, String key, String osDir) async {
+    var imagePath = "$osDir${imageWrapper.file.path}${imageWrapper.file.name}";
     var thumbFilePath =
-        "${dir.path}${image.file.path}${getThumbName(image.file.name)}";
+        "$osDir${imageWrapper.file.path}${getThumbName(imageWrapper.file.name)}";
     print("koko image path >" + imagePath);
 
-    var encryptedImage = _encrypt.encrypt(image.uint8list!, key);
-    var encryptedThumb = _encrypt.encrypt(image.thumbUint8list!, key);
-    await savePhysicalImage(encryptedImage.bytes, imagePath);
-    await savePhysicalImage(encryptedThumb.bytes, thumbFilePath);
-    await _dataSource.addFile(image.file);
+    var encryptedImage = _encrypt.encrypt(image, key);
+    var encryptedThumb = _encrypt.encrypt(imageWrapper.thumbUint8list!, key);
+    print("koko image encryption finished");
+    return [encryptedImage.bytes, encryptedThumb.bytes];
+  }
+
+  Future saveEncryptedImage(F.File file, Uint8List encryptedImage,
+      Uint8List encryptedThumb, String osDir) async {
+    var imagePath = "$osDir${file.path}${file.name}";
+    var thumbFilePath = "$osDir${file.path}${getThumbName(file.name)}";
+    await savePhysicalImage(encryptedImage, imagePath);
+    await savePhysicalImage(encryptedThumb, thumbFilePath);
+    await _dataSource.addFile(file);
+    print("koko saved successfully ");
   }
 
   Future<F.File> createImageFile(String path) async {
@@ -244,21 +329,20 @@ class DisplayingImagesUseCase {
     }
   }
 
-  Future decryptImagesBackToGallery(FileWrapper image) async {
+  Future decryptImagesBackToGallery(F.File file, Uint8List image) async {
     try {
       var dir = await getExternalStorageDirectory();
       var decryptedImagesPath =
           await Directory('${dir!.path}/decrypted').create(recursive: true);
 
-      var name = image.file.name.replaceAll(".$ENC_EXTENSION", ".jpg");
-      print("koko de name " + image.file.name);
-      await savePhysicalImage(
-          image.uint8list!, "${decryptedImagesPath.path}/$name");
-      await PhotoManager.editor.saveImage(image.uint8list!, title: name);
-      await deletePhysicalFile(dir.path + image.file.path + image.file.name);
-      await deletePhysicalFile(
-          dir.path + image.file.path + getThumbName(image.file.name));
-      await _dataSource.deleteFile(image.file);
+      var name = file.name.replaceAll(".$ENC_EXTENSION", ".jpg");
+      print("koko de name " + file.name);
+      await savePhysicalImage(image, "${decryptedImagesPath.path}/$name");
+      await PhotoManager.editor
+          .saveImageWithPath("${decryptedImagesPath.path}/$name", title: name);
+      await deletePhysicalFile(dir.path + file.path + file.name);
+      await deletePhysicalFile(dir.path + file.path + getThumbName(file.name));
+      await _dataSource.deleteFile(file);
     } catch (e) {
       print("koko decrypt images to gallery error > " + e.toString());
       return DataException(
@@ -293,6 +377,27 @@ class DisplayingImagesUseCase {
           "", DisplayImagesErrorCodes.failedToShareImages.toString());
     }
   }
+
+  // Future<dynamic> shareDecryptedImages(
+  //     List<FileWrapper> images, String path) async {
+  //   try {
+  //     var dir = await getExternalStorageDirectory();
+  //     var tempDirectory = DateTime.now()
+  //         .toUtc()
+  //         .toIso8601String()
+  //         .replaceAll("-", "_")
+  //         .replaceAll(":", "_");
+  //     var tempDir = Directory("${dir!.path}/$tempDirectory");
+  //     for (var image in images) {
+  //       await savePhysicalImage(image.uint8list!,
+  //           "${dir.path}/${tempDirectory}}/${image.file.name}");
+  //     }
+  //   } catch (e) {
+  //     print("koko share encrypted images error > " + e.toString());
+  //     return DataException(
+  //         "", DisplayImagesErrorCodes.failedToShareImages.toString());
+  //   }
+  // }
 
   Future<dynamic> importEncryptedImages(
       File zipFile, String path, String encKey) async {
@@ -329,7 +434,7 @@ class DisplayingImagesUseCase {
 
               filesDecryptingTask.add(() async {
                 await _dataSource.addFile(imageFile);
-                return decryptImage(imageFile, encKey, dir.path);
+                return decryptThumb(imageFile, encKey, dir.path);
               });
             }
 

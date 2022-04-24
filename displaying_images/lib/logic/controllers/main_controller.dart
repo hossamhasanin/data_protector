@@ -12,7 +12,7 @@ import 'package:displaying_images/logic/controllers/folders_controller.dart';
 import 'package:displaying_images/logic/controllers/images_controller.dart';
 import 'package:displaying_images/logic/datasource.dart';
 import 'package:displaying_images/logic/viewstates/dialog_state.dart';
-import 'package:displaying_images/logic/decrypt_isolate_vars.dart';
+import 'package:displaying_images/logic/models/decrypt_isolate_vars.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
 import 'package:displaying_images/logic/viewstates/selection_viewstate.dart';
 import 'package:displaying_images/logic/usecase.dart';

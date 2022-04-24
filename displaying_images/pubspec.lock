@@ -553,6 +553,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "7.0.5"
+  wifi_p2p:
+    dependency: "direct main"
+    description:
+      path: "../wifi_p2p"
+      relative: true
+    source: path
+    version: "0.0.1"
   win32:
     dependency: transitive
     description:
