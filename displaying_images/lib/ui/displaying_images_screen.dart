@@ -65,7 +65,8 @@ class DisplayingImagesScreen extends StatelessWidget {
                         textDelegate: EnglishAssetPickerTextDelegate()));
                 if (picked != null) {
                   for (var image in picked) {
-                    var imageApsolutePath = await (image.originFile)!!.path;
+                    var imageFile = await image.originFile;
+                    var imageApsolutePath = imageFile!.path;
                     var thumb = await image.thumbnailDataWithSize(
                         const ThumbnailSize(THUMB_SIZE, THUMB_SIZE));
                     var origin = await image.originBytes;
