@@ -17,7 +17,7 @@ class ConnectToReceiverMessage extends StatelessWidget {
             height: 20.0,
           ),
           Text(
-            "Device name ${device.name}",
+            "My name is " + device.name,
             style: const TextStyle(
               fontFamily: "jakarta",
               fontSize: 20,
@@ -25,9 +25,13 @@ class ConnectToReceiverMessage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Text(
-            "try to connect to it from other device to transfer the data ...",
-            style: Theme.of(context).textTheme.bodyText2,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(
+              "try to connect to it from other device to transfer the data ...",
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyText2,
+            ),
           ),
         ],
       ),

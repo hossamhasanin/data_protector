@@ -30,6 +30,8 @@ dependencies:
 
   get:
   equatable:
+  path_provider:
+  wechat_assets_picker:
 
   base:
     path: ../base

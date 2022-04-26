@@ -13,5 +13,5 @@ abstract class ShareImagesDataSource {
   Future connectToDevice(DevicePeer device);
   Future terminate();
 
-  Future saveFile(File item);
+  // Future saveFile(File item);
 }

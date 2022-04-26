@@ -6,7 +6,6 @@ import io.flutter.plugin.common.EventChannel
 
 class PeersStreamHandler : EventChannel.StreamHandler {
     private var sink: EventChannel.EventSink? = null
-    private var currentDevice: Map<String , Any> = mapOf()
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
         sink = events
@@ -28,21 +27,6 @@ class PeersStreamHandler : EventChannel.StreamHandler {
             }.toList()
             sink?.success(map)
         }
-    }
-
-    fun setCurrentDevice(device: WifiP2pDevice){
-        currentDevice = mapOf(
-            "deviceName" to device.deviceName,
-            "deviceAddress" to device.deviceAddress,
-            "deviceType" to device.primaryDeviceType,
-            "status" to device.status
-        )
-    }
-
-    fun sendCurrentDevice(){
-        sink?.success(mapOf<String , Any>(
-            "currentDevice" to currentDevice
-        ))
     }
 
 

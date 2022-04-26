@@ -155,6 +155,26 @@ Future decryptImageIsolate(DecryptToGalleryVars vars) async {
   }
 }
 
+Future decryptThumbIsolate(DecryptToGalleryVars vars) async {
+  List<Future<FileWrapper> Function()> decryptTasks = [];
+
+  for (var image in vars.files) {
+    decryptTasks
+        .add(() => vars.useCase.decryptThumb(image, vars.key, vars.osDir));
+  }
+
+  try {
+    var result = await Future.wait(decryptTasks.map((e) => e()));
+
+    Isolate.exit(vars.isolateStatePort, result);
+  } catch (e) {
+    Isolate.exit(
+        vars.isolateStatePort,
+        DataException(e.toString(),
+            DisplayImagesErrorCodes.couldNotDecryptImages.toString()));
+  }
+}
+
 // Future decryptImagesToMemory(DecryptToGalleryVars vars) async {
 //   List<Future<Uint8List> Function()> decryptTasks = [];
 //   var dir = await getExternalStorageDirectory();
@@ -325,6 +345,7 @@ class DisplayingImagesUseCase {
       await _dataSource.addFile(file);
       return null;
     } on DataException catch (e) {
+      print("koko error create folder " + e.toString());
       return e;
     }
   }
@@ -407,7 +428,7 @@ class DisplayingImagesUseCase {
       var encryptedImagesPath =
           await Directory(dir!.path + path).create(recursive: true);
 
-      List<Future<FileWrapper> Function()> filesDecryptingTask = [];
+      List<Future<F.File> Function()> filesDecryptingTask = [];
       await ZipFile.extractToDirectory(
           zipFile: zipFile,
           destinationDir: encryptedImagesPath,
@@ -434,23 +455,37 @@ class DisplayingImagesUseCase {
 
               filesDecryptingTask.add(() async {
                 await _dataSource.addFile(imageFile);
-                return decryptThumb(imageFile, encKey, dir.path);
+                return imageFile;
+                // return decryptThumb(imageFile, encKey, dir.path);
               });
             }
 
             return ZipFileOperation.includeItem;
           });
-      await deletePhysicalFile(zipFile.path);
+
+      var files = await Future.wait(filesDecryptingTask.map((e) => e()));
+      var port = ReceivePort();
+      await Isolate.spawn<DecryptToGalleryVars>(
+          decryptThumbIsolate,
+          DecryptToGalleryVars(
+              isolateStatePort: port.sendPort,
+              files: files,
+              useCase: this,
+              osDir: dir.path,
+              key: encKey));
+      var result = await port.first;
+      port.close();
+      // await deletePhysicalFile(zipFile.path);
       // for (var item in f) {
       //   filesDecryptingTask.add(decryptImage(item, encKey, dir.path));
       // }
-      return await Future.wait(filesDecryptingTask.map((e) => e()));
+      return result;
     } on DataException catch (e) {
       return e;
     } catch (e) {
       print("koko import encrypted images error > " + e.toString());
-      return DataException(
-          "", DisplayImagesErrorCodes.failedToImportImages.toString());
+      // return DataException(
+      //     "", DisplayImagesErrorCodes.failedToImportImages.toString());
     }
   }
 }

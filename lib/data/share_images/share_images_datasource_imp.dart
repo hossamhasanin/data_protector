@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:base/base.dart';
 import 'package:base/datasource/File.dart';
+import 'package:displaying_images/logic/datasource.dart';
 import 'package:share_images/logic/datasource.dart';
 import 'package:share_images/logic/models/device_peer.dart';
 import 'package:wifi_p2p/device.dart';
@@ -9,6 +10,7 @@ import 'package:wifi_p2p/wifi_p2p.dart';
 import 'package:share_images/share_images.dart';
 
 class ShareImagesDataSourceImp implements ShareImagesDataSource {
+  
   @override
   Future discoverDevices() async {
     try {
@@ -41,6 +43,13 @@ class ShareImagesDataSourceImp implements ShareImagesDataSource {
             currentTransferedItemIndex:
                 transferData.currentTransferedItemIndex!,
             transferedBytes: transferData.transferedBytes!);
+      } else if (transferData.thisDevice != null) {
+        return ConnectedState(
+            device: DevicePeer(
+                name: transferData.thisDevice!.name,
+                address: transferData.thisDevice!.address,
+                type: transferData.thisDevice!.type,
+                status: transferData.thisDevice!.status));
       } else {
         throw "Unknown transfer state";
       }
@@ -92,11 +101,5 @@ class ShareImagesDataSourceImp implements ShareImagesDataSource {
               status: device.status,
             ))
         .toList());
-  }
-
-  @override
-  Future saveFile(File item) {
-    // TODO: implement saveFile
-    throw UnimplementedError();
   }
 }

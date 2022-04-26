@@ -13,20 +13,20 @@ import 'package:displaying_images/logic/models/decrypt_to_gallery_vars.dart';
 import 'package:displaying_images/logic/models/encrypt_image_wrapper.dart';
 import 'package:displaying_images/logic/models/encrypt_isolate_vars.dart';
 import 'package:displaying_images/logic/usecase.dart';
-import 'package:displaying_images/logic/viewstates/encryption_dialog_state.dart';
 import 'package:displaying_images/logic/viewstates/selection_viewstate.dart';
 import 'package:displaying_images/logic/viewstates/viewstate.dart';
 import 'package:get/get.dart';
 import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_ui/progess_state_dialog/progress_dialog_state.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 class ImagesController extends GetxController {
   final DisplayingImagesUseCase _useCase;
   final DisplayingImagesController _controller;
 
-  final Rx<EncryptionDialogState> encryptionState =
-      EncryptionDialogState.initial().obs;
+  final Rx<ProgressDialogState> encryptionState =
+      ProgressDialogState.initial().obs;
 
   ReceivePort? encryptImagesIsolatePort;
   ReceivePort? decryptToGalleryIsolatePort;
@@ -34,7 +34,6 @@ class ImagesController extends GetxController {
 
   late final Function() showEncryptionStateDialog;
   late final Function() showSelectShareMethodeDialog;
-  late final Function() showDecryptingImagesToShareDialog;
   late final Function() showSelectReceivingMethodeDialog;
 
   ImagesController(this._controller, this._useCase);
@@ -58,12 +57,12 @@ class ImagesController extends GetxController {
 
     showEncryptionStateDialog();
     encryptionState.value = encryptionState.value.copy(
-        encryptionLoading: true,
-        encryptionLoadingMessage: "Encrypting images...",
-        encryptionError: "",
-        encryptionSuccessMessage: "",
-        encryptionSuccess: false,
-        encryptionProgress: 0);
+        loading: true,
+        loadingMessage: "Encrypting images...",
+        error: "",
+        successMessage: "",
+        success: false,
+        progress: 0);
 
     encryptImagesIsolatePort = ReceivePort();
     print("koko > start encrypt isolate");
@@ -89,34 +88,34 @@ class ImagesController extends GetxController {
 
     if (result is DataException) {
       encryptionState.value = encryptionState.value.copy(
-          encryptionLoading: false,
-          encryptionLoadingMessage: "",
-          encryptionSuccessMessage: "",
-          encryptionError: result.code,
-          encryptionSuccess: false,
-          encryptionProgress: 0);
+          loading: false,
+          loadingMessage: "",
+          successMessage: "",
+          error: result.code,
+          success: false,
+          progress: 0);
     } else {
       List<List<Uint8List>> encryptedResults = result as List<List<Uint8List>>;
       var finished = 0;
       for (var i = 0; i < imagesToEncrypt.length; i++) {
         await _useCase.saveEncryptedImage(imagesToEncrypt[i].file!,
-            encryptedResults[i][0], encryptedResults[i][1], dir!.path);
+            encryptedResults[i][0], encryptedResults[i][1], dir.path);
         await deletePhysicalFile(imagesToEncrypt[i].imageApsolutePath);
         finished += 1;
         encryptionState.value = encryptionState.value.copy(
-            encryptionLoading: true,
-            encryptionError: "",
-            encryptionSuccess: false,
-            encryptionProgress: finished / imagesToEncrypt.length);
+            loading: true,
+            error: "",
+            success: false,
+            progress: finished / imagesToEncrypt.length);
       }
       await PhotoManager.editor.deleteWithIds(ids);
 
       encryptionState.value = encryptionState.value.copy(
-          encryptionLoading: false,
-          encryptionError: "",
-          encryptionSuccess: true,
-          encryptionSuccessMessage: "Encryption done successfully!",
-          encryptionProgress: 1);
+          loading: false,
+          error: "",
+          success: true,
+          successMessage: "Encryption done successfully!",
+          progress: 1);
       // await Future.wait(deleteOriginalImageTasks.map((e) async => await e()));
       // await Future.wait(saveEncryptedImagesTasks.map((e) => e()));
     }
@@ -129,18 +128,23 @@ class ImagesController extends GetxController {
 
     showEncryptionStateDialog();
     encryptionState.value = encryptionState.value.copy(
-        encryptionLoading: true,
-        encryptionLoadingMessage: "Decrypting images...",
-        encryptionError: "",
-        encryptionSuccessMessage: "",
-        encryptionSuccess: false,
-        encryptionProgress: 0);
+        loading: true,
+        loadingMessage: "Decrypting images...",
+        error: "",
+        successMessage: "",
+        success: false,
+        progress: 0);
 
     if (_controller.selectionViewState.value.selectedFiles.length >
         MAX_DECRYPT_IMAGES) {
-      _controller.dialogState.value = _controller.dialogState.value.copy(
+      encryptionState.value = encryptionState.value.copy(
           loading: false,
-          error: DisplayImagesErrorCodes.exceededMaxDecryptNum.toString());
+          loadingMessage: "",
+          error:
+              DisplayImagesErrorCodes.exceededMaxDecryptNum.toString(),
+          successMessage: "",
+          success: false,
+          progress: 0);
       return;
     }
 
@@ -172,12 +176,12 @@ class ImagesController extends GetxController {
 
     if (result is DataException) {
       encryptionState.value = encryptionState.value.copy(
-          encryptionLoading: false,
-          encryptionLoadingMessage: "",
-          encryptionSuccessMessage: "",
-          encryptionError: result.code,
-          encryptionSuccess: false,
-          encryptionProgress: 0);
+          loading: false,
+          loadingMessage: "",
+          successMessage: "",
+          error: result.code,
+          success: false,
+          progress: 0);
     } else {
       List<Uint8List> decryptedResults = result as List<Uint8List>;
       var finished = 0;
@@ -186,18 +190,18 @@ class ImagesController extends GetxController {
             imageFiles[i], decryptedResults[i]);
         finished += 1;
         encryptionState.value = encryptionState.value.copy(
-            encryptionLoading: true,
-            encryptionError: "",
-            encryptionSuccess: false,
-            encryptionProgress: finished / imageFiles.length);
+            loading: true,
+            error: "",
+            success: false,
+            progress: finished / imageFiles.length);
       }
 
       encryptionState.value = encryptionState.value.copy(
-          encryptionLoading: false,
-          encryptionError: "",
-          encryptionSuccess: true,
-          encryptionSuccessMessage: "Decryption done successfully!",
-          encryptionProgress: 1);
+          loading: false,
+          error: "",
+          success: true,
+          successMessage: "Decryption done successfully!",
+          progress: 1);
     }
 
     _controller.selectionViewState.value = _controller.selectionViewState.value
@@ -240,8 +244,32 @@ class ImagesController extends GetxController {
     }
   }
 
-  Future<List<Uint8List>> getSelectedImages() async {
+  getSelectedImages(Function(List<Uint8List>) actionWhenDone) async {
     List<F.File> selectedImages = [];
+    showEncryptionStateDialog();
+
+    encryptionState.value = encryptionState.value.copy(
+        loading: true,
+        loadingMessage:
+            "Wait I am decrypting these images for you , just a sec...",
+        error: "",
+        successMessage: "",
+        success: false,
+        progress: 0);
+
+    if (_controller.selectionViewState.value.selectedFiles.length >
+        MAX_DECRYPT_IMAGES) {
+      encryptionState.value = encryptionState.value.copy(
+          loading: false,
+          loadingMessage: "",
+          error:
+              DisplayImagesErrorCodes.exceededMaxDecryptNum.toString(),
+          successMessage: "",
+          success: false,
+          progress: 0);
+      return [];
+    }
+
     for (var selected
         in _controller.selectionViewState.value.selectedFiles.keys) {
       selectedImages.add(_controller.viewState.value.files[selected].file);
@@ -257,9 +285,32 @@ class ImagesController extends GetxController {
             useCase: _useCase,
             osDir: dir!.path,
             key: _controller.encryptionKey));
-    var result = await decryptToGalleryIsolatePort!.first as List<Uint8List>;
+    var result = await decryptToGalleryIsolatePort!.first;
     decryptToGalleryIsolatePort!.close();
     decryptToGalleryIsolatePort = null;
+
+    if (result is DataException) {
+      encryptionState.value = encryptionState.value.copy(
+          loading: false,
+          loadingMessage: "",
+          successMessage: "",
+          error: result.code,
+          success: false,
+          progress: 0);
+    } else {
+      List<Uint8List> decryptedResults = result as List<Uint8List>;
+      encryptionState.value = encryptionState.value.copy(
+          loading: false,
+          error: "",
+          success: true,
+          successMessage:
+              "Decryption done successfully , now I will take you to the send those images!",
+          actionWhenDone: () {
+            actionWhenDone(decryptedResults);
+          },
+          progress: 1);
+    }
+
     return result;
   }
 

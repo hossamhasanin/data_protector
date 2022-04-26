@@ -7,6 +7,7 @@ import 'package:share_images/logic/sending/sending_controller.dart';
 import 'package:share_images/ui/receiving/components/devices_list.dart';
 import 'package:share_images/ui/receiving/components/receiving_files_list.dart';
 import 'package:share_images/ui/receiving/components/waiting_to_find_devices.dart';
+import 'package:shared_ui/shared_ui.dart';
 
 class Body extends StatefulWidget {
   const Body({Key? key}) : super(key: key);
@@ -40,63 +41,51 @@ class _BodyState extends State<Body> {
       );
     };
 
-    _controller.showDoneRecievingDialog = () {
-      Get.defaultDialog(
-        title: "Done",
-        content: const Text("All files have been received"),
-        actions: [
-          ElevatedButton(
-            child: const Text("Ok"),
-            onPressed: () => Get.back(),
-          ),
-        ],
-      );
+    _controller.showProgressStateDialog = () {
+      showProgressDialog(
+          context, _controller.progressDialogState, _translateErrorCodes,
+          closeDialog: () {
+        Get.back();
+      }, onDoneAction: () {
+        Get.back();
+      });
     };
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        Get.back(
-            result: _controller.viewState.value.files
-                .map((file) => file.image)
-                .toList());
-        return true;
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18.0),
-        child: Obx(() {
-          var viewState = _controller.viewState.value;
-          print("koko devices " + viewState.devices.toString());
-          if (viewState.isConnectedToSender) {
-            if (viewState.files.isEmpty) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-
-            return ReceivingFilesList(files: viewState.files);
-          } else if (viewState.isDiscoveringDevices) {
-            if (viewState.devices.isEmpty) {
-              return const WaitingToFindDevices();
-            }
-
-            return DevicesList(
-                connectToDevice: (device) {
-                  _controller.connectToDevice(device);
-                },
-                devices: viewState.devices,
-                senderTringToConnectWith: viewState.senderTringToConnectWith);
-          } else {
-            return Container(
-              child: const Center(
-                child: Text("No match"),
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18.0),
+      child: Obx(() {
+        var viewState = _controller.viewState.value;
+        print("koko devices " + viewState.devices.toString());
+        if (viewState.isConnectedToSender) {
+          if (viewState.files.isEmpty) {
+            return const Center(
+              child: CircularProgressIndicator(),
             );
           }
-        }),
-      ),
+
+          return ReceivingFilesList(files: viewState.files);
+        } else if (viewState.isDiscoveringDevices) {
+          if (viewState.devices.isEmpty) {
+            return const WaitingToFindDevices();
+          }
+
+          return DevicesList(
+              connectToDevice: (device) {
+                _controller.connectToDevice(device);
+              },
+              devices: viewState.devices,
+              senderTringToConnectWith: viewState.senderTringToConnectWith);
+        } else {
+          return Container(
+            child: const Center(
+              child: Text("No match"),
+            ),
+          );
+        }
+      }),
     );
   }
 

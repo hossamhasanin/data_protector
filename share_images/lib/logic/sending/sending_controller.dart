@@ -17,6 +17,7 @@ class SendingImagesConroller extends GetxController {
   final Rx<SendingViewState> viewState = SendingViewState.initial().obs;
 
   late final Function(String) showErrorDialog;
+  late final Function() showDoneDialog;
 
   StreamSubscription<TransferState>? _transferredDataListener;
 
@@ -47,6 +48,7 @@ class SendingImagesConroller extends GetxController {
 
   listenToTransferringData() {
     _transferredDataListener = _usecase.getTransferedData().listen((state) {
+      print("koko send state " + state.toString());
       if (state is FailedState) {
         if (viewState.value.files.isEmpty) {
           viewState.value = viewState.value.copy(
@@ -111,6 +113,7 @@ class SendingImagesConroller extends GetxController {
         viewState.value = viewState.value.copy(files: files, doneSending: done);
 
         if (done) {
+          showDoneDialog();
           _cancelListeners();
         }
       }

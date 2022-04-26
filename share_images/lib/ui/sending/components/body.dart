@@ -40,6 +40,19 @@ class _BodyState extends State<Body> {
         ],
       );
     };
+
+    _controller.showDoneDialog = () {
+      Get.defaultDialog(
+        title: "Done",
+        content: const Text("All files have been received"),
+        actions: [
+          ElevatedButton(
+            child: const Text("Ok"),
+            onPressed: () => Get.back(),
+          ),
+        ],
+      );
+    };
   }
 
   @override
@@ -48,6 +61,7 @@ class _BodyState extends State<Body> {
       padding: const EdgeInsets.symmetric(horizontal: 18.0),
       child: Obx(() {
         var viewState = _controller.viewState.value;
+        print("koko current deveice "+viewState.currentDevice.name);
         if (viewState.isConnectedToReciever) {
           if (viewState.files.isEmpty) {
             return const Center(

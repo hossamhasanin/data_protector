@@ -42,6 +42,7 @@ class WifiP2p {
 
   static Stream<TransfereData> get getTransferredData async* {
     yield* _transferredDataStream.receiveBroadcastStream().cast().map((map) {
+    print("koko wifi_p2p data $map");
       if (map["metaData"] != null) {
         return TransfereData(
           filesMetaData: (map["metaData"]["files"] as List)
@@ -61,7 +62,7 @@ class WifiP2p {
                 status: map["currentDevice"]["status"]));
       } else if (map["disconnected"] != null) {
         return const TransfereData(transfereFaild: true);
-      } else if (map["transeferred"] != null) {
+      } else if (map["transferred"] != null) {
         return TransfereData(
             transferedBytes: map["transferred"],
             currentTransferedItemIndex: map["itemIndex"]);

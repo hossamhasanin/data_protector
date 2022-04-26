@@ -1,3 +1,4 @@
+import 'package:displaying_images/logic/controllers/folders_controller.dart';
 import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ class FilesGridView extends StatelessWidget {
   final List<FileWrapper> images;
   final ScrollController scrollController;
   final DisplayingImagesController _controller = Get.find();
+  final FoldersController _foldersController = Get.find();
 
   FilesGridView(
       {Key? key, required this.images, required this.scrollController})
@@ -38,8 +40,7 @@ class FilesGridView extends StatelessWidget {
                   _controller.selectFile(file.file.type, index);
                 } else {
                   // open the folder
-                  if (!_controller
-                      .selectionViewState.value.isSelectingImages) {}
+                  _foldersController.openFolder(file.file);
                 }
                 // if (!bloc.isImageSelecting.value &&
                 //     !bloc.isFolderSelecting.value) {

@@ -79,7 +79,7 @@ class WifiP2pPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       data = data,
       transferHandler = transferredDataStreamHandler
     )
-    peersStreamHandler.sendCurrentDevice()
+//    peersStreamHandler.sendCurrentDevice()
     transferService.transfer()
   }
 
@@ -111,7 +111,7 @@ class WifiP2pPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   }
 
   fun setCurrentDeviceData(device: WifiP2pDevice){
-      peersStreamHandler.setCurrentDevice(device)
+      transferredDataStreamHandler.setCurrentDevice(device)
   }
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
@@ -125,6 +125,7 @@ class WifiP2pPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
 
         override fun onFailure(p0: Int) {
+          Log.d("koko" , "discovery failed")
           result.error("DISCOVERY_ERR" , "Discovery error" , null);
         }
 

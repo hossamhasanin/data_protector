@@ -36,28 +36,33 @@ class WiFiDirectBroadcastReceiver(
             }
             WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> {
                 // Respond to new connection or disconnections
+                Log.d("koko" , "connection changed")
 
-                if (!isConnected){
-                    isConnected = true
+                if (isConnected){
+                    isConnected = false
                     plugin.startTransferProcess()
                     Log.d("koko" , "connected")
                 } else {
-                    isConnected = false
+                    // isConnected = false
                     Log.d("koko" , "disconnected")
                 }
-
+ 
 
             }
             WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION -> {
                 // Respond to this device's wifi state changing
+                Log.d("koko" , "device changed")
                 val device: WifiP2pDevice = intent.getParcelableExtra(
                     WifiP2pManager.EXTRA_WIFI_P2P_DEVICE)!!
+
                 when (device.status){
                     WifiP2pDevice.CONNECTED -> {
+                        isConnected = true
                         Log.d("koko" , "connected for sure ${device.deviceName}")
                     }
                     WifiP2pDevice.AVAILABLE -> {
                         Log.d("koko" , "available ${device.deviceName}")
+                        plugin.setCurrentDeviceData(device)
                     }
                     WifiP2pDevice.FAILED -> {
                         Log.d("koko" , "failed ${device.deviceName}")

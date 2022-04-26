@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:base/Constants.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -34,6 +35,42 @@ Future deletePhysicalFile(String fileName) async {
     await storagePermission.request();
     await manageStoragePermission.request();
     return deletePhysicalFile(fileName);
+  }
+}
+
+Future<bool> requestRequiredPermissions() async {
+  if (Platform.isAndroid) {
+    var deviceInfo = await DeviceInfoPlugin().androidInfo;
+    if (deviceInfo.version.sdkInt! > 29) {
+      return await _requestMainPermisions();
+    } else {
+      var storagePermission = Permission.storage;
+      if (await storagePermission.status.isGranted) {
+        return true;
+      } else {
+        await storagePermission.request();
+        return requestRequiredPermissions();
+      }
+    }
+  } else {
+    return await _requestMainPermisions();
+  }
+}
+
+Future<bool> _requestMainPermisions() async {
+  var storagePermission = Permission.storage;
+  var manageStoragePermission = Permission.manageExternalStorage;
+  if (await storagePermission.status.isGranted &&
+      await manageStoragePermission.status.isGranted) {
+    return true;
+  } else {
+    var requestedStorage = await storagePermission.request();
+    var requestedManageStorage = await manageStoragePermission.request();
+    if (requestedManageStorage.isGranted && requestedStorage.isGranted) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 

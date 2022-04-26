@@ -7,6 +7,7 @@ import 'package:data_protector/data/user/user_supplier_imp.dart';
 import 'package:data_protector/dependencies.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_events.dart';
 import 'package:data_protector/onboardingScreen/OnboardingWidget.dart';
+import 'package:displaying_images/logic/helper_functions.dart';
 import 'package:displaying_images/ui/t.dart';
 import 'package:displaying_images/ui/displaying_images_screen.dart';
 import 'package:flutter/material.dart';
@@ -36,17 +37,62 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: APP_NAME,
-      getPages: [
-        GetPage(name: sendImagesScreen, page: () => SendingScreen()),
-        GetPage(name: receiveImagesScreen, page: () => ReceivingScreen()),
-        GetPage(
-            name: displayingImagesScreen, page: () => DisplayingImagesScreen()),
-      ],
-      home: DisplayingImagesScreen(),
-      // home: TestPackage(),
-    );
+        debugShowCheckedModeBanner: false,
+        title: APP_NAME,
+        getPages: [
+          GetPage(name: sendImagesScreen, page: () => SendingScreen()),
+          GetPage(name: receiveImagesScreen, page: () => ReceivingScreen()),
+          GetPage(
+              name: displayingImagesScreen,
+              page: () => DisplayingImagesScreen()),
+        ],
+        home: StatefulBuilder(
+          builder: (_ , setState) {
+            return FutureBuilder<bool>(
+                future: requestRequiredPermissions(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Scaffold(
+                      body: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Scaffold(
+                      body: Center(
+                        child: Text("Couldn't check the permisions"),
+                      ),
+                    );
+                  }
+
+                  if (snapshot.data!) {
+                    return DisplayingImagesScreen();
+                  } else {
+                    return Scaffold(
+                      body: Center(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                              "Sorry you must accept the required permissions"),
+                          SizedBox(height: 10.0,),    
+                          ElevatedButton(
+                            child: Text("Try again"),
+                            onPressed: () {
+                              setState(() {});
+                            },
+                          )
+                        ],
+                      )),
+                    );
+                  }
+                });
+          },
+        )
+        // home: TestPackage(),
+        );
   }
 }
 

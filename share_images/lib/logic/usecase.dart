@@ -1,10 +1,13 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:base/base.dart';
-import 'package:base/datasource/File.dart';
+import 'package:base/datasource/File.dart' as F;
+import 'package:path_provider/path_provider.dart';
 import 'package:share_images/logic/datasource.dart';
 import 'package:share_images/logic/models/device_peer.dart';
 import 'package:share_images/logic/item.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 import 'transfer_states.dart';
 
@@ -52,8 +55,13 @@ class ShareImagesUsecase {
 
   Future saveTransferredFile(Item item) async {
     try {
-      await _dataSource
-          .saveFile(File(name: item.name, id: "", path: "", type: 0));
+      var dir = await getExternalStorageDirectory();
+      var receivedDirectory = await Directory(dir!.path + '/received').create();
+      var file = await File(receivedDirectory.path + '/' + item.name)
+          .writeAsBytes(item.image!);
+      await PhotoManager.editor.saveImageWithPath(file.path, title: item.name);
+      // await _dataSource
+      //     .saveFile(F.File(name: item.name, id: "", path: "", type: 0));
     } on DataException catch (e) {
       return e;
     }

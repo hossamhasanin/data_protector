@@ -10,17 +10,21 @@ import 'package:share_images/logic/error_codes.dart';
 import 'package:share_images/logic/item.dart';
 import 'package:share_images/logic/usecase.dart';
 import 'package:share_images/share_images.dart';
+import 'package:shared_ui/progess_state_dialog/progress_dialog_state.dart';
 
 import 'receiving_viewstate.dart';
 
 class ReceivingController extends GetxController {
   late final ShareImagesUsecase _usecase;
 
+  final Rx<ProgressDialogState> progressDialogState =
+      ProgressDialogState.initial().obs;
+
   // create rx viewstate
   final Rx<ReceivingViewState> viewState = ReceivingViewState.initial().obs;
 
   late final Function(String) showErrorDialog;
-  late final Function() showDoneRecievingDialog;
+  late final Function() showProgressStateDialog;
 
   StreamSubscription<TransferState>? _transferredDataListener;
 
@@ -61,7 +65,8 @@ class ReceivingController extends GetxController {
   }
 
   listenToTransferringData() {
-    _transferredDataListener = _usecase.getTransferedData().listen((state) {
+    _transferredDataListener =
+        _usecase.getTransferedData().listen((state) async {
       if (state is FailedState) {
         if (viewState.value.files.isEmpty) {
           viewState.value = viewState.value.copy(
@@ -127,11 +132,35 @@ class ReceivingController extends GetxController {
             viewState.value.copy(files: files, doneReceiving: done);
 
         if (done) {
-          showDoneRecievingDialog();
+          saveRecievedImages();
           _cancelConnection();
         }
       }
     });
+  }
+
+  saveRecievedImages() async {
+    showProgressStateDialog();
+    progressDialogState.value = progressDialogState.value.copy(
+        loading: true,
+        loadingMessage:
+            "Saving the files , please don't close the app while saving the files",
+        error: "",
+        success: false,
+        successMessage: "",
+        progress: 0,
+        actionWhenDone: () {});
+
+    await Future.wait(viewState.value.files
+        .map((file) => _usecase.saveTransferredFile(file)));
+    progressDialogState.value = progressDialogState.value.copy(
+        loading: false,
+        loadingMessage: "",
+        error: "",
+        success: true,
+        successMessage: "Files saved successfully",
+        progress: 100,
+        actionWhenDone: () {});
   }
 
   _cancelConnection() {

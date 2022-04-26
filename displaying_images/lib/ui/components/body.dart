@@ -141,10 +141,10 @@ class BodyState extends State<Body> {
                   leading: const Icon(Icons.share),
                   onTap: () async {
                     Get.back();
-                    _imagesController.showDecryptingImagesToShareDialog();
-                    var images = await _imagesController.getSelectedImages();
-                    Get.back();
-                    Get.toNamed(sendImagesScreen, arguments: images);
+                    _imagesController.getSelectedImages((images) {
+                      _controller.cancelSelecting();
+                      Get.toNamed(sendImagesScreen, arguments: images);
+                    });
                   },
                 ),
               ],
@@ -191,79 +191,16 @@ class BodyState extends State<Body> {
           });
     };
 
-    _imagesController.showDecryptingImagesToShareDialog = () {
-      showCustomDialog(context: context, title: "Decrypting ...", children: [
-        const CircularProgressIndicator(),
-        const SizedBox(
-          height: 10.0,
-        ),
-        const Text("Wait a sec this could take some time ...")
-      ]);
-    };
-
     _imagesController.showEncryptionStateDialog = () {
       dialogContext = context;
-      showDialog(
-          context: dialogContext!,
-          builder: (_) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0)),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Obx(() {
-                  var dialogState = _imagesController.encryptionState.value;
-                  print("koko dialog state " + dialogState.toString());
-                  if (dialogState.encryptionError.isNotEmpty) {
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_translateErrorCodes(dialogState.encryptionError)),
-                        const SizedBox(
-                          height: 10.0,
-                        ),
-                        ElevatedButton(
-                            onPressed: () {
-                              if (dialogContext != null) {
-                                Get.back();
-                                dialogContext = null;
-                              }
-                            },
-                            child: const Text("Okay"))
-                      ],
-                    );
-                  }
-
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(
-                        value: dialogState.encryptionProgress == 0
-                            ? null
-                            : dialogState.encryptionProgress,
-                      ),
-                      const SizedBox(
-                        height: 10.0,
-                      ),
-                      Text(dialogState.encryptionSuccess
-                          ? dialogState.encryptionSuccessMessage
-                          : dialogState.encryptionLoadingMessage),
-                      if (dialogState.encryptionSuccess)
-                        ElevatedButton(
-                            onPressed: () {
-                              if (dialogContext != null) {
-                                Get.back();
-                                dialogContext = null;
-                              }
-                            },
-                            child: const Text("Done"))
-                    ],
-                  );
-                }),
-              ),
-            );
-          },
-          barrierDismissible: false);
+      showProgressDialog(dialogContext!, _imagesController.encryptionState,
+          _translateErrorCodes,
+          onDoneAction: () {}, closeDialog: () {
+        if (dialogContext != null) {
+          Get.back();
+          dialogContext = null;
+        }
+      });
     };
 
     _controller.loadFiles();
@@ -317,6 +254,7 @@ class BodyState extends State<Body> {
                     ),
                     onPressed: () {
                       // goBack();
+                      _foldersController.goBack();
                     },
                   );
                 } else {
@@ -400,7 +338,9 @@ class BodyState extends State<Body> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              PathTextWidget(path: _controller.currentPath.value),
+              Obx(() {
+                return PathTextWidget(path: _controller.currentPath.value);
+              }),
               Obx(() {
                 var viewState = _controller.viewState.value;
 
@@ -485,6 +425,7 @@ class BodyState extends State<Body> {
                     ElevatedButton(
                       onPressed: () {
                         _foldersController.addFolder(folderName.text);
+                        folderName.text = "";
                         Navigator.pop(context);
                       },
                       child: const Text("Create"),
