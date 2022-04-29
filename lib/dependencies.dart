@@ -9,6 +9,7 @@ import 'package:data_protector/data/share_images/share_images_datasource_imp.dar
 import 'package:data_protector/data/user/user_supplier.dart';
 import 'package:data_protector/data/user/user_supplier_imp.dart';
 import 'package:displaying_images/logic/datasource.dart';
+import 'package:displaying_images/logic/usecase.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:share_images/logic/datasource.dart';
@@ -51,5 +52,6 @@ void injection() {
   Get.put<UserSupplier>(UserSupplierImp());
   Get.put<DisplayingImagesDataSource>(
       DisplayingImagesDataSourceImp(Get.find()));
+  Get.put(DisplayingImagesUseCase(Get.find(), Get.find()));
   Get.put<ShareImagesDataSource>(ShareImagesDataSourceImp());
 }

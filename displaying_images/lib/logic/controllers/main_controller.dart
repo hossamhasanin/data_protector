@@ -28,6 +28,7 @@ class DisplayingImagesController extends GetxController {
   final Rx<DialogState> dialogState = DialogState.init().obs;
   late final DisplayingImagesUseCase _useCase;
   late Function() showStateDialog;
+  late Future<bool> Function(String) showConfirmDialog;
 
   RxString currentPath = "/".obs;
 
@@ -41,9 +42,7 @@ class DisplayingImagesController extends GetxController {
 
   String encryptionKey = "";
 
-  DisplayingImagesController(
-      DisplayingImagesDataSource dataSource, Encrypt encrypt) {
-    _useCase = DisplayingImagesUseCase(dataSource, encrypt);
+  DisplayingImagesController(this._useCase) {
     Get.put(FoldersController(this, _useCase));
     Get.put(ImagesController(this, _useCase));
   }
@@ -85,6 +84,16 @@ class DisplayingImagesController extends GetxController {
   }
 
   deleteFiles() async {
+
+    if (selectionViewState.value.selectedFiles.isEmpty) {
+      return;
+    }
+
+    final isConfermed = await showConfirmDialog("Are you sure you want to delete the selected files?");
+    if (!isConfermed) {
+      return;
+    }
+
     showStateDialog();
     dialogState.value = dialogState.value
         .copy(loading: true, doneMessage: "", isDone: false, error: "");
@@ -143,7 +152,7 @@ class DisplayingImagesController extends GetxController {
 
     print("koko files " + files.toString());
     print("koko enc key " + encryptionKey);
-    _startIsolate(files, []);
+    _startIsolate(files);
   }
 
   loadMoreFiles() async {
@@ -153,21 +162,21 @@ class DisplayingImagesController extends GetxController {
       return;
     }
 
-    viewState.value = viewState.value.copy(loadingMore: true);
+    // viewState.value = viewState.value.copy(loadingMore: true);
     // await Future.delayed(Duration(seconds: 3));
     // viewState.value = viewState.value.copy(loadingMore: false);
     var files = await _useCase.getFiles(
         currentPath.value, viewState.value.files.length - 1);
     if (files.isEmpty) {
       viewState.value =
-          viewState.value.copy(loadingMore: false, noMoreData: false);
+          viewState.value.copy(loadingMore: false, noMoreData: true);
     } else {
-      _startIsolate(files, viewState.value.files);
+      _startIsolate(files);
     }
   }
 
   _startIsolate(
-      Queue<List<File>> newToLoadFiles, List<FileWrapper> loadedFiles) async {
+      Queue<List<File>> newToLoadFiles) async {
     var dir = await getExternalStorageDirectory();
     _closeIsolate();
     isolateStatePort = ReceivePort();
@@ -181,7 +190,6 @@ class DisplayingImagesController extends GetxController {
             platformDirPath: dir!.path,
             deleteFilesPort: deleteFilesPort!.sendPort,
             newToLoadFiles: newToLoadFiles,
-            loadedFiles: loadedFiles,
             useCase: _useCase));
     _listenToIsolateStateStream();
     _listenToIsolateDeletingFilesStream();

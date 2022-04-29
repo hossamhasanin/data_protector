@@ -6,7 +6,6 @@ import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/controllers/images_controller.dart';
 import 'package:displaying_images/logic/helper_functions.dart';
 import 'package:displaying_images/logic/models/encrypt_image_wrapper.dart';
-import 'package:displaying_images/ui/components/body.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,9 +13,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_ui/shared_ui.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
+import 'components/body.dart';
+
 class DisplayingImagesScreen extends StatelessWidget {
   final DisplayingImagesController _controller =
-      Get.put(DisplayingImagesController(Get.find(), Get.find()));
+      Get.put(DisplayingImagesController(Get.find()));
   final ImagesController _imagesController = Get.find();
   final GlobalKey<AnimatedFloatingButtonState> animatedButtonKey = GlobalKey();
   final GlobalKey<BodyState> bodyKey = GlobalKey();

@@ -8,18 +8,20 @@ import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/controllers/folders_controller.dart';
 import 'package:displaying_images/logic/controllers/images_controller.dart';
 import 'package:displaying_images/logic/helper_functions.dart';
-import 'package:displaying_images/ui/components/files_grid_view.dart';
-import 'package:displaying_images/ui/components/folders_selected_menu.dart';
-import 'package:displaying_images/ui/components/images_selected_menu.dart';
-import 'package:displaying_images/ui/components/main_menu.dart';
-import 'package:displaying_images/ui/components/path_text_widget.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:shared_ui/shared_ui.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wifi_p2p/device.dart';
 import 'package:wifi_p2p/wifi_p2p.dart';
+
+import 'files_grid_view.dart';
+import 'folders_selected_menu.dart';
+import 'images_selected_menu.dart';
+import 'main_menu.dart';
+import 'path_text_widget.dart';
 
 class Body extends StatefulWidget {
   final GlobalKey<AnimatedFloatingButtonState> animatedButtonKey;
@@ -34,6 +36,7 @@ class BodyState extends State<Body> {
   final ImagesController _imagesController = Get.find();
   final FoldersController _foldersController = Get.find();
   late final ScrollController _filesScrollController;
+  final RefreshController _refreshController = RefreshController();
   BuildContext? dialogContext;
 
   TextEditingController folderName = TextEditingController();
@@ -72,7 +75,7 @@ class BodyState extends State<Body> {
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(_translateErrorCodes(dialogState.error)),
+                        Text(translateErrorCodes(dialogState.error)),
                         const SizedBox(
                           height: 10.0,
                         ),
@@ -194,7 +197,7 @@ class BodyState extends State<Body> {
     _imagesController.showEncryptionStateDialog = () {
       dialogContext = context;
       showProgressDialog(dialogContext!, _imagesController.encryptionState,
-          _translateErrorCodes,
+          translateErrorCodes,
           onDoneAction: () {}, closeDialog: () {
         if (dialogContext != null) {
           Get.back();
@@ -203,20 +206,37 @@ class BodyState extends State<Body> {
       });
     };
 
+    _controller.showConfirmDialog = (message) async {
+      bool result = false;
+      await Get.defaultDialog(
+          content: Text(message),
+          textConfirm: "Yes",
+          textCancel: "No",
+          onConfirm: () {
+            result = true;
+            Get.back();
+          },
+          onCancel: () {
+            result = false;
+            Get.back();
+          });
+      return result;
+    };
+
     _controller.loadFiles();
 
-    _filesScrollController.addListener(() {
-      // if (_filesScrollController.position.pixels == _filesScrollController.position.maxScrollExtent) {
-      //   // _controller.loadMoreFiles();
-      //   print("koko load more");
-      // }
-      if (_filesScrollController.offset >=
-              _filesScrollController.position.maxScrollExtent &&
-          !_filesScrollController.position.outOfRange) {
-        print("koko load more");
-        _controller.loadMoreFiles();
-      }
-    });
+    // _filesScrollController.addListener(() {
+    //   // if (_filesScrollController.position.pixels == _filesScrollController.position.maxScrollExtent) {
+    //   //   // _controller.loadMoreFiles();
+    //   //   print("koko load more");
+    //   // }
+    //   if (_filesScrollController.offset >=
+    //           _filesScrollController.position.maxScrollExtent &&
+    //       !_filesScrollController.position.outOfRange) {
+    //     print("koko load more");
+    //     _controller.loadMoreFiles();
+    //   }
+    // });
 
     super.initState();
   }
@@ -355,9 +375,19 @@ class BodyState extends State<Body> {
 
                 if (viewState.files.isNotEmpty) {
                   return Expanded(
-                      child: FilesGridView(
-                    images: viewState.files,
-                    scrollController: _filesScrollController,
+                      child: SmartRefresher(
+                    enablePullDown: false,
+                    enablePullUp: !viewState.noMoreData,
+                    controller: _refreshController,
+                    onLoading: () {
+                      print("koko load more");
+                      _controller.loadMoreFiles();
+                      _refreshController.loadComplete();
+                    },
+                    child: FilesGridView(
+                      images: viewState.files,
+                      scrollController: _filesScrollController,
+                    ),
                   ));
                 } else {
                   return Column(
@@ -373,20 +403,20 @@ class BodyState extends State<Body> {
                       ]);
                 }
               }),
-              Obx(() {
-                var viewState = _controller.viewState.value;
+              // Obx(() {
+              //   var viewState = _controller.viewState.value;
 
-                if (viewState.loadingMore) {
-                  return const SizedBox(
-                    height: 50.0,
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                } else {
-                  return Container();
-                }
-              })
+              //   if (viewState.loadingMore) {
+              //     return const SizedBox(
+              //       height: 50.0,
+              //       child: Center(
+              //         child: CircularProgressIndicator(),
+              //       ),
+              //     );
+              //   } else {
+              //     return Container();
+              //   }
+              // })
             ],
           ),
         ))
@@ -436,32 +466,5 @@ class BodyState extends State<Body> {
             ),
           );
         });
-  }
-
-  String _translateErrorCodes(String code) {
-    print(code);
-    if (code == DisplayImagesErrorCodes.couldNotDecryptImages.toString()) {
-      return "Could not decrypt images";
-    } else if (code == DisplayImagesErrorCodes.couldNotDeleteFiles.toString()) {
-      return "Could not delete files";
-    } else if (code == DisplayImagesErrorCodes.failedToShareImages.toString()) {
-      return "Could not share images";
-    } else if (code ==
-        DisplayImagesErrorCodes.exceededMaxDecryptNum.toString()) {
-      return "Exceeded max decrypt number";
-    } else if (code == DisplayImagesErrorCodes.couldNotDeleteFiles.toString()) {
-      return "Could not delete files";
-    } else if (code ==
-        DisplayImagesErrorCodes.failedToImportImages.toString()) {
-      return "Failed to import images";
-    } else if (code ==
-        DisplayImagesErrorCodes.fileNameAlreadyExists.toString()) {
-      return "This file is here already";
-    } else if (code ==
-        DisplayImagesErrorCodes.couldNotEncryptImages.toString()) {
-      return "Could not encrypt images";
-    } else {
-      throw "Not found error code";
-    }
   }
 }

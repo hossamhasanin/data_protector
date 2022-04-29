@@ -46,6 +46,7 @@ class ImagesController extends GetxController {
     for (var i = 0; i < imagesToEncrypt.length; i++) {
       var imageFile =
           await _useCase.createImageFile(_controller.currentPath.value);
+      print("koko image file > " + imageFile.toString());
       imagesToEncrypt[i] = imagesToEncrypt[i].copyWith(file: imageFile);
       ids.add(imagesToEncrypt[i].id);
 
@@ -100,7 +101,8 @@ class ImagesController extends GetxController {
       for (var i = 0; i < imagesToEncrypt.length; i++) {
         await _useCase.saveEncryptedImage(imagesToEncrypt[i].file!,
             encryptedResults[i][0], encryptedResults[i][1], dir.path);
-        await deletePhysicalFile(imagesToEncrypt[i].imageApsolutePath);
+        // await deletePhysicalFile(imagesToEncrypt[i].imageApsolutePath);
+        File(imagesToEncrypt[i].imageApsolutePath).deleteSync();
         finished += 1;
         encryptionState.value = encryptionState.value.copy(
             loading: true,
@@ -108,7 +110,7 @@ class ImagesController extends GetxController {
             success: false,
             progress: finished / imagesToEncrypt.length);
       }
-      await PhotoManager.editor.deleteWithIds(ids);
+      // PhotoManager.editor.deleteWithIds(ids);
 
       encryptionState.value = encryptionState.value.copy(
           loading: false,
@@ -126,6 +128,12 @@ class ImagesController extends GetxController {
       return;
     }
 
+    final isConfermed = await _controller.showConfirmDialog(
+        "Are you sure you are going to decrypt images to gallery?");
+    if (!isConfermed) {
+      return;
+    }
+
     showEncryptionStateDialog();
     encryptionState.value = encryptionState.value.copy(
         loading: true,
@@ -140,8 +148,7 @@ class ImagesController extends GetxController {
       encryptionState.value = encryptionState.value.copy(
           loading: false,
           loadingMessage: "",
-          error:
-              DisplayImagesErrorCodes.exceededMaxDecryptNum.toString(),
+          error: DisplayImagesErrorCodes.exceededMaxDecryptNum.toString(),
           successMessage: "",
           success: false,
           progress: 0);
@@ -219,6 +226,12 @@ class ImagesController extends GetxController {
       return;
     }
 
+    final isConfermed = await _controller.showConfirmDialog(
+        "Are you sure you are going to share those images images?");
+    if (!isConfermed) {
+      return;
+    }
+
     _controller.showStateDialog();
     _controller.dialogState.value = _controller.dialogState.value
         .copy(loading: true, error: "", doneMessage: "", isDone: false);
@@ -246,6 +259,13 @@ class ImagesController extends GetxController {
 
   getSelectedImages(Function(List<Uint8List>) actionWhenDone) async {
     List<F.File> selectedImages = [];
+
+    final isConfermed = await _controller.showConfirmDialog(
+        "Are you sure you are going to decrypt images and share them ?");
+    if (!isConfermed) {
+      return;
+    }
+
     showEncryptionStateDialog();
 
     encryptionState.value = encryptionState.value.copy(
@@ -262,8 +282,7 @@ class ImagesController extends GetxController {
       encryptionState.value = encryptionState.value.copy(
           loading: false,
           loadingMessage: "",
-          error:
-              DisplayImagesErrorCodes.exceededMaxDecryptNum.toString(),
+          error: DisplayImagesErrorCodes.exceededMaxDecryptNum.toString(),
           successMessage: "",
           success: false,
           progress: 0);
@@ -349,5 +368,17 @@ class ImagesController extends GetxController {
             error: "");
       }
     }
+  }
+
+  List<FileWrapper> getImagesInCurrentPath() {
+    List<FileWrapper> images = [];
+
+    for (var file in _controller.viewState.value.files) {
+      if (file.file.type == SavedFileType.IMAGE.index) {
+        images.add(file);
+      }
+    }
+
+    return images;
   }
 }

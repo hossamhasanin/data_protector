@@ -48,9 +48,6 @@ fetchFilesIsolate(DecryptIsolateVars vars) async {
       List<Future<FileWrapper> Function()> batchFiles = [];
       var fileLists = files.removeFirst();
       for (var file in fileLists) {
-        if (vars.loadedFiles.contains(file)) {
-          continue;
-        }
 
         if (file.type == SavedFileType.IMAGE.index) {
           print("koko I am working here ");
@@ -291,7 +288,8 @@ class DisplayingImagesUseCase {
   }
 
   Future<F.File> createImageFile(String path) async {
-    var dateTime = DateTime.now()
+    var time = DateTime.now();
+    var dateTime = time
         .toUtc()
         .toIso8601String()
         .replaceAll("-", "_")
@@ -304,6 +302,7 @@ class DisplayingImagesUseCase {
         name: _imageFileName,
         id: dateTime,
         path: path,
+        timeStamp: time.millisecondsSinceEpoch,
         type: SavedFileType.IMAGE.index);
   }
 
@@ -442,7 +441,8 @@ class DisplayingImagesUseCase {
 
             if (!zFile.name.contains(THUMB_FILE_ENC_EXTENSION)) {
               // print("koko thumb file");
-              var dateTime = DateTime.now()
+              var time = DateTime.now();
+              var dateTime = time
                   .toUtc()
                   .toIso8601String()
                   .replaceAll("-", "_")
@@ -451,6 +451,7 @@ class DisplayingImagesUseCase {
                   id: dateTime,
                   name: zFile.name,
                   path: path,
+                  timeStamp: time.millisecondsSinceEpoch,
                   type: SavedFileType.IMAGE.index);
 
               filesDecryptingTask.add(() async {

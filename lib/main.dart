@@ -8,8 +8,9 @@ import 'package:data_protector/dependencies.dart';
 import 'package:data_protector/encryptImages/blocs/encrypt_events.dart';
 import 'package:data_protector/onboardingScreen/OnboardingWidget.dart';
 import 'package:displaying_images/logic/helper_functions.dart';
+import 'package:displaying_images/ui/displaying_images/displaying_images_screen.dart';
+import 'package:displaying_images/ui/open_image/open_image_screen.dart';
 import 'package:displaying_images/ui/t.dart';
-import 'package:displaying_images/ui/displaying_images_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -45,9 +46,10 @@ class MyApp extends StatelessWidget {
           GetPage(
               name: displayingImagesScreen,
               page: () => DisplayingImagesScreen()),
+          GetPage(name: openImageScreen, page: () => OpenImageScreen()),
         ],
         home: StatefulBuilder(
-          builder: (_ , setState) {
+          builder: (_, setState) {
             return FutureBuilder<bool>(
                 future: requestRequiredPermissions(),
                 builder: (context, snapshot) {
@@ -69,15 +71,18 @@ class MyApp extends StatelessWidget {
 
                   if (snapshot.data!) {
                     return DisplayingImagesScreen();
+                    // return OpenImageScreen();
                   } else {
                     return Scaffold(
                       body: Center(
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
                               "Sorry you must accept the required permissions"),
-                          SizedBox(height: 10.0,),    
+                          SizedBox(
+                            height: 10.0,
+                          ),
                           ElevatedButton(
                             child: Text("Try again"),
                             onPressed: () {

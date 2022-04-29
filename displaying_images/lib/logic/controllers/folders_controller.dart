@@ -19,6 +19,7 @@ class FoldersController extends GetxController {
         name: fileName,
         id: "0",
         path: _controller.currentPath.value,
+        timeStamp: DateTime.now().millisecondsSinceEpoch,
         type: SavedFileType.FOLDER.index);
     var wrapper = FileWrapper(file: file);
     var files = List<FileWrapper>.from(_controller.viewState.value.files);

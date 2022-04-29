@@ -12,7 +12,6 @@ class DecryptIsolateVars {
   final String platformDirPath;
   final SendPort deleteFilesPort;
   final Queue<List<F.File>> newToLoadFiles;
-  final List<FileWrapper> loadedFiles;
   final DisplayingImagesUseCase useCase;
 
   DecryptIsolateVars(
@@ -22,6 +21,5 @@ class DecryptIsolateVars {
       required this.platformDirPath,
       required this.deleteFilesPort,
       required this.newToLoadFiles,
-      required this.loadedFiles,
       required this.useCase});
 }

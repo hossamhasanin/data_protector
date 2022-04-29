@@ -30,7 +30,7 @@ Future deletePhysicalFile(String fileName) async {
   if (await storagePermission.status.isGranted &&
       await manageStoragePermission.status.isGranted) {
     var file = File(fileName);
-    return file.existsSync() ? file.delete() : throw "File $fileName not found";
+    return file.existsSync() ? file.deleteSync() : throw "File $fileName not found";
   } else {
     await storagePermission.request();
     await manageStoragePermission.request();

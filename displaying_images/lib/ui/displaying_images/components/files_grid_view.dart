@@ -1,4 +1,6 @@
+import 'package:base/base.dart';
 import 'package:displaying_images/logic/controllers/folders_controller.dart';
+import 'package:displaying_images/logic/controllers/images_controller.dart';
 import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +14,7 @@ class FilesGridView extends StatelessWidget {
   final ScrollController scrollController;
   final DisplayingImagesController _controller = Get.find();
   final FoldersController _foldersController = Get.find();
+  final ImagesController _imagesController = Get.find();
 
   FilesGridView(
       {Key? key, required this.images, required this.scrollController})
@@ -20,11 +23,13 @@ class FilesGridView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-        controller: scrollController,
+        // controller: scrollController,
         padding: const EdgeInsets.all(8.0),
+        shrinkWrap: true,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3, mainAxisSpacing: 5.0, crossAxisSpacing: 5.0),
         //semanticChildCount: images.length,
+        physics: ClampingScrollPhysics(),
         itemCount: images.length,
         itemBuilder: (context, index) {
           var file = images[index];
@@ -87,7 +92,11 @@ class FilesGridView extends StatelessWidget {
                   } else {
                     // open the image
                     if (!_controller
-                        .selectionViewState.value.isSelectingFolders) {}
+                        .selectionViewState.value.isSelectingFolders) {
+                      var images = _imagesController.getImagesInCurrentPath();
+                      var imageIndex = images.indexOf(file);
+                      Get.toNamed(openImageScreen , arguments: [images,_controller.encryptionKey,imageIndex]);
+                    }
                   }
                 });
           } else {

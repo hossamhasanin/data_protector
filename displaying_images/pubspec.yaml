@@ -39,6 +39,7 @@ dependencies:
   flutter_archive: ^4.2.0
   file_picker:
   device_info_plus: ^3.2.3
+  pull_to_refresh: ^2.0.0
 
 
   base:

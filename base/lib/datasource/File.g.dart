@@ -17,17 +17,17 @@ class FileAdapter extends TypeAdapter<File> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return File(
-      name: fields[1] as String,
-      id: fields[0] as String,
-      path: fields[2] as String,
-      type: fields[3] as int,
-    );
+        name: fields[1] as String,
+        id: fields[0] as String,
+        path: fields[2] as String,
+        type: fields[3] as int,
+        timeStamp: fields[4] as int);
   }
 
   @override
   void write(BinaryWriter writer, File obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -35,7 +35,9 @@ class FileAdapter extends TypeAdapter<File> {
       ..writeByte(2)
       ..write(obj.path)
       ..writeByte(3)
-      ..write(obj.type);
+      ..write(obj.type)
+      ..writeByte(4)
+      ..write(obj.timeStamp);
   }
 
   @override

@@ -18,15 +18,19 @@ class File extends Equatable {
   @HiveField(3)
   int type;
 
+  @HiveField(4)
+  int timeStamp;
+
   File(
       {required this.name,
       required this.id,
       required this.path,
+      required this.timeStamp,
       required this.type});
 
 
   @override
-  List<Object?> get props => [id , name , path , type];
+  List<Object?> get props => [id , name , path , type , timeStamp];
 }
 
 
@@ -35,6 +39,7 @@ class EmptyFile extends File{
       name: "",
       id: "",
       path: "",
-      type: -1
+      type: -1,
+      timeStamp: -1
   );
 }
