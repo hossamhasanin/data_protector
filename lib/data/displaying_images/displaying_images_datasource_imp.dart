@@ -9,6 +9,33 @@ import 'package:displaying_images/logic/error_codes.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+/// Database Archticture
+/// 
+/// {
+///  "<folder_path>" : {
+///  "files" : {
+///    "<file_name>" : <File_Object>
+///   },
+///  "folders" : {
+///    "<folder_name>" : <File_Object>
+///  }
+/// }
+/// }
+/// 
+/// example:
+/// 
+/// {
+/// "/" : {
+///  "files" : {
+///    "file1.hg" : <File_Object>
+///  },
+///  "folders" : {
+///    "folder1" : <File_Object>
+///  }
+/// }
+/// }
+/// 
+
 class DisplayingImagesDataSourceImp implements DisplayingImagesDataSource {
   final UserSupplier _userSupplier;
 
@@ -107,28 +134,24 @@ class DisplayingImagesDataSourceImp implements DisplayingImagesDataSource {
 
     var filesBox = await getFilesBox();
     var folder = filesBox.get(path);
-    
+
     if (filesBox.containsKey(path)) {
-      
       Map foldersMap = folder!["folders"];
-      Map filesMap = folder["files"];  
+      Map filesMap = folder["files"];
       List<File> folders = List<File>.from(foldersMap.values.toList());
       List<File> files = List<File>.from(filesMap.values.toList());
       files.sort((p, n) {
-          return n.timeStamp.compareTo(p.timeStamp);
+        return n.timeStamp.compareTo(p.timeStamp);
       });
       if (lastFileIndex != -1) {
         // paginate
 
-        
-        files = files
-            .getRange(lastFileIndex , files.length)
-            .take(pageSize)
-            .toList();
+        files =
+            files.getRange(lastFileIndex, files.length).take(pageSize).toList();
         return [...files];
       } else {
         files = files.take(pageSize).toList();
-        return [...folders , ...files];
+        return [...folders, ...files];
       }
     } else {
       return [];
