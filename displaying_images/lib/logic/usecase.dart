@@ -109,6 +109,7 @@ fetchFilesIsolate(DecryptIsolateVars vars) async {
 Future encryptFilesIsolate(EncryptIsolateVars vars) async {
   List<Future<List<Uint8List>> Function()> encryptTasks = [];
 
+  print("Read image files as bytes");
   for (var image in vars.images) {
     var imageBytes = File(image.imageApsolutePath).readAsBytesSync();
     encryptTasks.add(() => vars.useCase.encryptImage(

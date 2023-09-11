@@ -79,11 +79,12 @@ class ImagesController extends GetxController {
             osDir: dir!.path,
             path: _controller.currentPath.value,
             key: _controller.encryptionKey));
-    s.kill();
+    // s.kill();
     print("koko > end encrypt isolate");
     print("koko current isolate > " + Isolate.current.debugName.toString());
 
     var result = await encryptImagesIsolatePort!.first;
+    print("koko > end encrypt isolate port");
     encryptImagesIsolatePort!.close();
     encryptImagesIsolatePort = null;
 
@@ -95,14 +96,18 @@ class ImagesController extends GetxController {
           error: result.code,
           success: false,
           progress: 0);
+
+      print("error with encryption :" + result.toString());
     } else {
       List<List<Uint8List>> encryptedResults = result as List<List<Uint8List>>;
       var finished = 0;
       for (var i = 0; i < imagesToEncrypt.length; i++) {
         await _useCase.saveEncryptedImage(imagesToEncrypt[i].file!,
             encryptedResults[i][0], encryptedResults[i][1], dir.path);
+      print("encryption done successfully and saved images files");
         // await deletePhysicalFile(imagesToEncrypt[i].imageApsolutePath);
         File(imagesToEncrypt[i].imageApsolutePath).deleteSync();
+        print("encryption done successfully and deleted images files");
         finished += 1;
         encryptionState.value = encryptionState.value.copy(
             loading: true,
@@ -110,6 +115,7 @@ class ImagesController extends GetxController {
             success: false,
             progress: finished / imagesToEncrypt.length);
       }
+      print("encryption done successfully completed");
       // PhotoManager.editor.deleteWithIds(ids);
 
       encryptionState.value = encryptionState.value.copy(
@@ -118,6 +124,7 @@ class ImagesController extends GetxController {
           success: true,
           successMessage: "Encryption done successfully!",
           progress: 1);
+      s.kill();
       // await Future.wait(deleteOriginalImageTasks.map((e) async => await e()));
       // await Future.wait(saveEncryptedImagesTasks.map((e) => e()));
     }

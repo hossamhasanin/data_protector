@@ -27,9 +27,9 @@ void main() async {
   Encrypt encrypt = Get.find();
   await supplier.cacheUser(User(
       id: "0",
-      email: "koko",
+      email: "Hossam",
       encryptionKey: encrypt.hash("popo"),
-      name: "koko"));
+      name: "Hossam"));
   runApp(MyApp());
 }
 
