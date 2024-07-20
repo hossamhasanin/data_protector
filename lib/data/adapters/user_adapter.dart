@@ -5,8 +5,6 @@ class UserAdapter extends TypeAdapter<User>{
   @override
   User read(BinaryReader reader) {
     return User(
-        id: reader.read(),
-        email: reader.read(),
         encryptionKey: reader.read(),
         name: reader.read()
     );
@@ -18,8 +16,6 @@ class UserAdapter extends TypeAdapter<User>{
   @override
   void write(BinaryWriter writer, User obj) {
     writer
-      ..write(obj.id)
-      ..write(obj.email)
       ..write(obj.encryptionKey)
       ..write(obj.name);
   }

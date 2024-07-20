@@ -1,10 +1,7 @@
 import 'package:base/datasource/File.dart';
-import 'package:base/datasource/network/AuthDataSource.dart';
-import 'package:base/datasource/network/FirebaseAuthDataSource.dart';
-import 'package:data_protector/auth/AuthUseCase.dart';
-import 'package:data_protector/auth/blocs/auth_bloc.dart';
 import 'package:data_protector/data/adapters/user_adapter.dart';
 import 'package:data_protector/data/displaying_images/displaying_images_datasource_imp.dart';
+import 'package:data_protector/data/set_user/set_user_datasource_impl.dart';
 import 'package:data_protector/data/share_images/share_images_datasource_imp.dart';
 import 'package:data_protector/data/user/user_supplier.dart';
 import 'package:data_protector/data/user/user_supplier_imp.dart';
@@ -12,15 +9,10 @@ import 'package:displaying_images/logic/datasource.dart';
 import 'package:displaying_images/logic/usecase.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:set_user/logic/datasource.dart';
 import 'package:share_images/logic/datasource.dart';
-import 'encryptImages/encrypt_images_use_case.dart';
-
-import 'package:data_protector/encryptImages/blocs/encrypt_bloc.dart';
-import 'package:base/datasource/Database.dart';
-import 'package:base/datasource/DatabaseImbl.dart';
 import 'package:base/encrypt/encryption.dart' as E;
 
-import 'onboardingScreen/OnboardingController.dart';
 
 void injection() {
   // core stuff
@@ -54,4 +46,5 @@ void injection() {
       DisplayingImagesDataSourceImp(Get.find()));
   Get.put(DisplayingImagesUseCase(Get.find(), Get.find()));
   Get.put<ShareImagesDataSource>(ShareImagesDataSourceImp());
+  Get.put<SetUserDataSource>(SetUserDataSourceImpl(Get.find()));
 }

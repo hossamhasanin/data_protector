@@ -1,16 +1,12 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:isolate';
-import 'dart:typed_data';
-import 'package:base/Constants.dart';
 import 'package:base/base.dart';
 import 'package:base/datasource/File.dart';
-import 'package:base/encrypt/Encrypt.dart';
 import 'package:displaying_images/displaying_images.dart';
 import 'package:displaying_images/logic/GetImagesStreamWrapper.dart';
 import 'package:displaying_images/logic/controllers/folders_controller.dart';
 import 'package:displaying_images/logic/controllers/images_controller.dart';
-import 'package:displaying_images/logic/datasource.dart';
 import 'package:displaying_images/logic/viewstates/dialog_state.dart';
 import 'package:displaying_images/logic/models/decrypt_isolate_vars.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
@@ -131,20 +127,18 @@ class DisplayingImagesController extends GetxController {
         selectedFiles: {}, isSelectingImages: false, isSelectingFolders: false);
   }
 
-  getUser() async {
-    // viewState.value = viewState.value.copy(user: await _useCase.getUserData());
-    viewState.value = viewState.value.copy(
-        user: User(
-            id: "0",
-            email: "email",
-            encryptionKey: "encryptionKey",
-            name: "koko"));
+  Future getUser() async {
+    viewState.value = viewState.value.copy(user: await _useCase.getUserData());
+    // viewState.value = viewState.value.copy(
+    //     user: User(
+    //         encryptionKey: "encryptionKey",
+    //         name: "koko"));
   }
 
   loadFiles() async {
     viewState.value = viewState.value.copy(loading: true);
 
-    getUser();
+    await getUser();
 
     print("koko load the files");
     var files = await _useCase.getFiles(currentPath.value, -1);

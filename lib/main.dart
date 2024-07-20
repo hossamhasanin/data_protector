@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:set_user/ui/set_user_screen.dart';
 import 'package:share_images/ui/receiving/receiving_screen.dart';
 import 'package:share_images/ui/sending/sending_screen.dart';
 
@@ -26,8 +27,6 @@ void main() async {
   UserSupplier supplier = UserSupplierImp();
   Encrypt encrypt = Get.find();
   await supplier.cacheUser(User(
-      id: "0",
-      email: "Hossam",
       encryptionKey: encrypt.hash("popo"),
       name: "Hossam"));
   runApp(MyApp());
@@ -47,6 +46,7 @@ class MyApp extends StatelessWidget {
               name: displayingImagesScreen,
               page: () => DisplayingImagesScreen()),
           GetPage(name: openImageScreen, page: () => OpenImageScreen()),
+          GetPage(name: setUserDataScreen, page: () => SetUserScreen()),
         ],
         home: StatefulBuilder(
           builder: (_, setState) {
@@ -70,7 +70,7 @@ class MyApp extends StatelessWidget {
                   }
 
                   if (snapshot.data!) {
-                    return DisplayingImagesScreen();
+                    return SetUserScreen();
                     // return OpenImageScreen();
                   } else {
                     return Scaffold(

@@ -16,9 +16,9 @@ class AuthUseCase {
   }
 
   Future<void> signup(String username, String email, String password) async {
-    final userId = await _authDataSource.signup(username, email, password);
+    // final userId = await _authDataSource.signup(username, email, password);
     final user =
-        User(id: userId, name: username, email: email, encryptionKey: "");
+        User(name: username, encryptionKey: "");
     return _authDataSource.createUserInDatabase(user);
   }
 

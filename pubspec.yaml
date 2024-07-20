@@ -50,6 +50,8 @@ dependencies:
     path: wifi_p2p
   share_images:
     path: share_images
+  set_user:
+    path: set_user
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
