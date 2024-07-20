@@ -30,7 +30,7 @@ class ConnectToReceiverMessage extends StatelessWidget {
             child: Text(
               "try to connect to it from other device to transfer the data ...",
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyText2,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
         ],

@@ -34,7 +34,7 @@ dependencies:
   image:
   stream_channel:
   path_provider:
-  wechat_assets_picker:
+  wechat_assets_picker: ^9.1.0
   share:
   flutter_archive: ^4.2.0
   file_picker:
