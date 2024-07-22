@@ -142,14 +142,14 @@ class DisplayingImagesController extends GetxController {
 
     print("koko load the files");
     var files = await _useCase.getFiles(currentPath.value, -1);
-    encryptionKey = await _useCase.getEncryptionKey();
+    encryptionKey = viewState.value.user.encryptionKey;
 
     print("koko files " + files.toString());
     print("koko enc key " + encryptionKey);
     _startIsolate(files);
   }
 
-  loadMoreFiles() async {
+  Future loadMoreFiles() async {
     if (viewState.value.loadingMore ||
         viewState.value.noMoreData ||
         viewState.value.loading) {
@@ -160,7 +160,7 @@ class DisplayingImagesController extends GetxController {
     // await Future.delayed(Duration(seconds: 3));
     // viewState.value = viewState.value.copy(loadingMore: false);
     var files = await _useCase.getFiles(
-        currentPath.value, viewState.value.files.length - 1);
+        currentPath.value, viewState.value.files.length);
     if (files.isEmpty) {
       viewState.value =
           viewState.value.copy(loadingMore: false, noMoreData: true);

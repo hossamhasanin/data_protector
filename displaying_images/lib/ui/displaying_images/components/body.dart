@@ -1,7 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
 
-import 'package:base/Constants.dart';
 import 'package:base/base.dart';
 import 'package:displaying_images/displaying_images.dart';
 import 'package:displaying_images/logic/controllers/main_controller.dart';
@@ -13,9 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:shared_ui/shared_ui.dart';
-import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wifi_p2p/device.dart';
-import 'package:wifi_p2p/wifi_p2p.dart';
 
 import 'files_grid_view.dart';
 import 'folders_selected_menu.dart';
@@ -379,9 +375,9 @@ class BodyState extends State<Body> {
                     enablePullDown: false,
                     enablePullUp: !viewState.noMoreData,
                     controller: _refreshController,
-                    onLoading: () {
+                    onLoading: () async {
                       print("koko load more");
-                      _controller.loadMoreFiles();
+                      await _controller.loadMoreFiles();
                       _refreshController.loadComplete();
                     },
                     child: FilesGridView(

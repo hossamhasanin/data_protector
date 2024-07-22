@@ -1,16 +1,9 @@
 import 'package:base/Constants.dart';
 import 'package:base/base.dart';
-import 'package:base/encrypt/Encrypt.dart';
-import 'package:data_protector/auth/widgets/LoginPage.dart';
-import 'package:data_protector/data/user/user_supplier.dart';
-import 'package:data_protector/data/user/user_supplier_imp.dart';
 import 'package:data_protector/dependencies.dart';
-import 'package:data_protector/encryptImages/blocs/encrypt_events.dart';
-import 'package:data_protector/onboardingScreen/OnboardingWidget.dart';
 import 'package:displaying_images/logic/helper_functions.dart';
 import 'package:displaying_images/ui/displaying_images/displaying_images_screen.dart';
 import 'package:displaying_images/ui/open_image/open_image_screen.dart';
-import 'package:displaying_images/ui/t.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -24,11 +17,11 @@ void main() async {
   await GetStorage.init();
   await Hive.initFlutter();
   injection();
-  UserSupplier supplier = UserSupplierImp();
-  Encrypt encrypt = Get.find();
-  await supplier.cacheUser(User(
-      encryptionKey: encrypt.hash("popo"),
-      name: "Hossam"));
+  // UserSupplier supplier = UserSupplierImp();
+  // Encrypt encrypt = Get.find();
+  // await supplier.cacheUser(User(
+  //     encryptionKey: encrypt.hash("popo"),
+  //     name: "Hossam"));
   runApp(MyApp());
 }
 

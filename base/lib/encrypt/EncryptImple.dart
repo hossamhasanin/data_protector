@@ -7,7 +7,8 @@ import 'package:encrypt/encrypt.dart';
 
 class EncryptImple implements Encrypt {
   // final key = Key.fromUtf8("WKOPoDUeQzTXYo7RA5W6Cg==");
-  final iv = IV.fromLength(16);
+  // The iv is concatinated to secret key during encryption and decryption so it has to be constant not random generated
+  final iv = IV.fromUtf8("hgguardian");
   @override
   Uint8List decrypt(Uint8List bytes, String key) {
     final encrypter = Encrypter(AES(Key.fromUtf8(key)));

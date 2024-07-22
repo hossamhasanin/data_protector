@@ -103,6 +103,5 @@ class FilesGridView extends StatelessWidget {
             throw Exception("No matched file type");
           }
         });
-    ;
   }
 }

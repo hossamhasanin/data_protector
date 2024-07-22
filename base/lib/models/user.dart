@@ -20,4 +20,15 @@ class User extends Equatable {
       "encryptionKey": this.encryptionKey
     };
   }
+
+  // create a copyWith method
+  User copyWith({
+    String? name,
+    String? encryptionKey,
+  }) {
+    return User(
+      name: name ?? this.name,
+      encryptionKey: encryptionKey ?? this.encryptionKey,
+    );
+  }
 }

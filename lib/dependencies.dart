@@ -41,7 +41,7 @@ void injection() {
   // // Get.put(EncryptImagesBloc(useCase: Get.find()));
   // // Get.put(AuthBloc(authUseCase: Get.find()));
   // Get.put(OnboardingController());
-  Get.put<UserSupplier>(UserSupplierImp());
+  Get.put<UserSupplier>(UserSupplierImp(Get.find()));
   Get.put<DisplayingImagesDataSource>(
       DisplayingImagesDataSourceImp(Get.find()));
   Get.put(DisplayingImagesUseCase(Get.find(), Get.find()));

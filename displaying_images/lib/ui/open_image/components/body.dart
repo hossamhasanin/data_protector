@@ -1,4 +1,3 @@
-import 'package:base/datasource/File.dart';
 import 'package:displaying_images/logic/controllers/open_image_controller.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
 import 'package:flutter/material.dart';

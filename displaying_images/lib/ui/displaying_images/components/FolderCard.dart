@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_ui/shared_ui.dart';
 
+// ignore: must_be_immutable
 class FolderCard extends StatelessWidget {
   Rx<SelectionViewState> selectionViewState;
   FileWrapper folder;
@@ -12,11 +13,11 @@ class FolderCard extends StatelessWidget {
   int index;
 
   FolderCard(
-      {required this.folder,
+      {Key? key, required this.folder,
       required this.index,
       required this.selectionViewState,
       required this.onTap,
-      required this.onLongPress});
+      required this.onLongPress}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

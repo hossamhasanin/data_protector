@@ -1,27 +1,22 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:base/Constants.dart';
-import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/controllers/images_controller.dart';
-import 'package:displaying_images/logic/helper_functions.dart';
+import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/models/encrypt_image_wrapper.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_ui/shared_ui.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 import 'components/body.dart';
 
 class DisplayingImagesScreen extends StatelessWidget {
-  final DisplayingImagesController _controller =
-      Get.put(DisplayingImagesController(Get.find()));
-  final ImagesController _imagesController = Get.find();
+  late final ImagesController _imagesController;
   final GlobalKey<AnimatedFloatingButtonState> animatedButtonKey = GlobalKey();
   final GlobalKey<BodyState> bodyKey = GlobalKey();
-  DisplayingImagesScreen({Key? key}) : super(key: key);
+  DisplayingImagesScreen({Key? key}) : super(key: key){
+    Get.put(DisplayingImagesController(Get.find()));
+    _imagesController = Get.find();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +65,7 @@ class DisplayingImagesScreen extends StatelessWidget {
                     var imageApsolutePath = imageFile!.path;
                     var thumb = await image.thumbnailDataWithSize(
                         const ThumbnailSize(THUMB_SIZE, THUMB_SIZE));
-                    var origin = await image.originBytes;
+                    // var origin = await image.originBytes;
                     imagesToEncrypt.add(EncryptImageWrapper(
                         imageApsolutePath: imageApsolutePath,
                         id: image.id,

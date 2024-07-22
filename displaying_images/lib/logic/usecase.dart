@@ -7,7 +7,6 @@ import 'package:base/Constants.dart';
 import 'package:base/base.dart';
 import 'package:base/datasource/File.dart' as F;
 import 'package:base/encrypt/encryption.dart';
-import 'package:base/models/user.dart';
 import 'package:displaying_images/logic/datasource.dart';
 import 'package:displaying_images/logic/models/decrypt_isolate_vars.dart';
 import 'package:displaying_images/logic/error_codes.dart';
@@ -17,14 +16,12 @@ import 'package:displaying_images/logic/models/encrypt_isolate_vars.dart';
 import 'package:flutter_archive/flutter_archive.dart';
 import 'package:image/image.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:share/share.dart';
 import 'package:stream_channel/isolate_channel.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 import 'GetImagesStreamWrapper.dart';
 import 'helper_functions.dart';
-import 'package:flutter/material.dart' as material;
 
 fetchFilesIsolate(DecryptIsolateVars vars) async {
   SendPort statePort = vars.isolateStatePort;
@@ -35,7 +32,7 @@ fetchFilesIsolate(DecryptIsolateVars vars) async {
   SendPort deletingFilesPort = vars.deleteFilesPort;
   Queue<List<F.File>> files = vars.newToLoadFiles;
   Future<FileWrapper> decryptImage(file, key) {
-    print("koko decrypt now");
+    print("koko decrypt now with key > "+ key);
     return vars.useCase.decryptThumb(file, key, platformDir);
   }
 
@@ -120,7 +117,7 @@ Future encryptFilesIsolate(EncryptIsolateVars vars) async {
   }
 
   try {
-    print("koko > all files are encrypting");
+    print("koko > all files are encrypting with key > "+ vars.key);
     var result = await Future.wait(encryptTasks.map((e) => e()));
     print("koko > all files encrypted");
     Isolate.exit(vars.isolateStatePort, result);
@@ -271,6 +268,7 @@ class DisplayingImagesUseCase {
     var thumbFilePath =
         "$osDir${imageWrapper.file.path}${getThumbName(imageWrapper.file.name)}";
     print("koko image path >" + imagePath);
+    print("koko thumb image path >" + thumbFilePath);
 
     var encryptedImage = _encrypt.encrypt(image, key);
     var encryptedThumb = _encrypt.encrypt(imageWrapper.thumbUint8list!, key);

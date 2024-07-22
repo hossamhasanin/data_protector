@@ -144,6 +144,7 @@ class DisplayingImagesDataSourceImp implements DisplayingImagesDataSource {
         return n.timeStamp.compareTo(p.timeStamp);
       });
       if (lastFileIndex != -1) {
+        if (lastFileIndex < pageSize) return [];
         // paginate
 
         files =

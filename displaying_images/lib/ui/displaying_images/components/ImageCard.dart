@@ -3,6 +3,7 @@ import 'package:displaying_images/logic/viewstates/selection_viewstate.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+// ignore: must_be_immutable
 class ImageCard extends StatelessWidget {
   Rx<SelectionViewState> selectionViewState;
   FileWrapper image;

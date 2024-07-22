@@ -1,9 +1,7 @@
 import 'dart:collection';
-import 'dart:io';
 import 'dart:isolate';
 import 'package:base/datasource/File.dart' as F;
 import 'package:displaying_images/logic/usecase.dart';
-import '../image_file_wrapper.dart';
 
 class DecryptIsolateVars {
   final SendPort isolateStatePort;

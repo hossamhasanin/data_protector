@@ -1,6 +1,5 @@
 import 'dart:isolate';
 
-import 'package:displaying_images/logic/image_file_wrapper.dart';
 import 'package:displaying_images/logic/models/encrypt_image_wrapper.dart';
 import 'package:displaying_images/logic/usecase.dart';
 

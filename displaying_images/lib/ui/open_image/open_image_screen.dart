@@ -1,4 +1,3 @@
-import 'package:displaying_images/logic/controllers/open_image_controller.dart';
 import 'package:flutter/material.dart';
 
 import 'components/body.dart';

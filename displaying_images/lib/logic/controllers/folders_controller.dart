@@ -3,8 +3,6 @@ import 'package:base/datasource/File.dart';
 import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
 import 'package:displaying_images/logic/usecase.dart';
-import 'package:displaying_images/logic/viewstates/selection_viewstate.dart';
-import 'package:displaying_images/logic/viewstates/viewstate.dart';
 import 'package:get/get.dart';
 
 class FoldersController extends GetxController {

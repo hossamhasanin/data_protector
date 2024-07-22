@@ -92,11 +92,10 @@ class _BodyState extends State<Body> {
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: _nameTextController,
-                    keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
                       hintText: 'Your name',
                       hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
-                        color: Colors.black,
+                        color: Colors.grey,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.0),
@@ -116,9 +115,9 @@ class _BodyState extends State<Body> {
                   TextFormField(
                     controller: _secretKeyTextController,
                     decoration: InputDecoration(
-                      hintText: 'Write a secret key to encrypt the files with',
+                      hintText: 'Write a secret key to encrypt the files',
                       hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
-                        color: Colors.black,
+                        color: Colors.grey,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.0),

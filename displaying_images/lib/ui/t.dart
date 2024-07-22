@@ -6,6 +6,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wifi_p2p/device.dart';
 import 'package:wifi_p2p/wifi_p2p.dart';
 
+// ignore: must_be_immutable
 class TestPackage extends StatelessWidget {
    TestPackage({Key? key}) : super(key: key);
 

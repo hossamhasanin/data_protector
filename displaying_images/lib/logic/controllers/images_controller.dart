@@ -4,22 +4,18 @@ import 'dart:typed_data';
 
 import 'package:base/Constants.dart';
 import 'package:base/base.dart';
+// ignore: library_prefixes
 import 'package:base/datasource/File.dart' as F;
 import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/error_codes.dart';
-import 'package:displaying_images/logic/helper_functions.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
 import 'package:displaying_images/logic/models/decrypt_to_gallery_vars.dart';
 import 'package:displaying_images/logic/models/encrypt_image_wrapper.dart';
 import 'package:displaying_images/logic/models/encrypt_isolate_vars.dart';
 import 'package:displaying_images/logic/usecase.dart';
-import 'package:displaying_images/logic/viewstates/selection_viewstate.dart';
-import 'package:displaying_images/logic/viewstates/viewstate.dart';
 import 'package:get/get.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_ui/progess_state_dialog/progress_dialog_state.dart';
-import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 class ImagesController extends GetxController {
   final DisplayingImagesUseCase _useCase;
@@ -40,6 +36,16 @@ class ImagesController extends GetxController {
 
   Future encryptImages(List<EncryptImageWrapper> imagesToEncrypt) async {
     print("koko encrypt > " + imagesToEncrypt.length.toString());
+
+    showEncryptionStateDialog();
+    encryptionState.value = encryptionState.value.copy(
+        loading: true,
+        loadingMessage: "Encrypting images...",
+        error: "",
+        successMessage: "",
+        success: false,
+        progress: 0);
+
     var files = List<FileWrapper>.from(_controller.viewState.value.files);
     List<String> ids = [];
 
@@ -56,14 +62,7 @@ class ImagesController extends GetxController {
     _controller.viewState.value =
         _controller.viewState.value.copy(files: files);
 
-    showEncryptionStateDialog();
-    encryptionState.value = encryptionState.value.copy(
-        loading: true,
-        loadingMessage: "Encrypting images...",
-        error: "",
-        successMessage: "",
-        success: false,
-        progress: 0);
+    
 
     encryptImagesIsolatePort = ReceivePort();
     print("koko > start encrypt isolate");
