@@ -8,6 +8,7 @@ class EncryptEvent extends Equatable {
   List<Object> get props => [];
 }
 
+// ignore: must_be_immutable
 class GetStoredFiles extends EncryptEvent {
   String path;
   bool clearTheList;
@@ -16,6 +17,7 @@ class GetStoredFiles extends EncryptEvent {
   List<Object> get props => [path, clearTheList];
 }
 
+// ignore: must_be_immutable
 class EncryptImages extends EncryptEvent {
   List<Uint8List> images;
   List<Uint8List> thumbs;
@@ -26,6 +28,7 @@ class EncryptImages extends EncryptEvent {
 
 class DecryptImages extends EncryptEvent {}
 
+// ignore: must_be_immutable
 class DeleteFolders extends EncryptEvent {
   List<FileWrapper> folders;
   DeleteFolders({required this.folders});
@@ -34,6 +37,7 @@ class DeleteFolders extends EncryptEvent {
   List<Object> get props => [folders];
 }
 
+// ignore: must_be_immutable
 class CreateNewFolder extends EncryptEvent {
   String name;
   CreateNewFolder({required this.name});
@@ -41,6 +45,7 @@ class CreateNewFolder extends EncryptEvent {
   List<Object> get props => [name];
 }
 
+// ignore: must_be_immutable
 class PickingImagesError extends EncryptEvent {
   String error;
   PickingImagesError({required this.error});
@@ -48,13 +53,13 @@ class PickingImagesError extends EncryptEvent {
   List<Object> get props => [error];
 }
 
+// ignore: must_be_immutable
 class GotImagesEvent extends EncryptEvent {
   List<FileWrapper> images;
 
   GotImagesEvent({required this.images});
 
   @override
-  // TODO: implement props
   List<Object> get props => [images];
 }
 

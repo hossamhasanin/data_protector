@@ -1,8 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:base/base.dart';
-import 'package:base/datasource/File.dart';
-import 'package:displaying_images/logic/datasource.dart';
 import 'package:share_images/logic/datasource.dart';
 import 'package:share_images/logic/models/device_peer.dart';
 import 'package:wifi_p2p/device.dart';

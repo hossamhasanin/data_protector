@@ -1,10 +1,12 @@
 import 'package:base/Constants.dart';
 import 'package:base/base.dart';
+import 'package:data_protector/data/user/user_supplier.dart';
 import 'package:data_protector/dependencies.dart';
 import 'package:displaying_images/logic/helper_functions.dart';
 import 'package:displaying_images/ui/displaying_images/displaying_images_screen.dart';
 import 'package:displaying_images/ui/open_image/open_image_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -12,21 +14,26 @@ import 'package:set_user/ui/set_user_screen.dart';
 import 'package:share_images/ui/receiving/receiving_screen.dart';
 import 'package:share_images/ui/sending/sending_screen.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await GetStorage.init();
-  await Hive.initFlutter();
+void main() async {  
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  await Future.wait([GetStorage.init(),Hive.initFlutter()]);
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   injection();
-  // UserSupplier supplier = UserSupplierImp();
+  UserSupplier supplier = Get.find();
+  final user = await supplier.getUser();
+  FlutterNativeSplash.remove();
   // Encrypt encrypt = Get.find();
   // await supplier.cacheUser(User(
   //     encryptionKey: encrypt.hash("popo"),
   //     name: "Hossam"));
-  runApp(MyApp());
+  runApp(MyApp(islogedIn: user != null));
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+  final bool islogedIn;
+
+  const MyApp({Key? key, required this.islogedIn}) : super(key: key);
+  
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
@@ -63,7 +70,11 @@ class MyApp extends StatelessWidget {
                   }
 
                   if (snapshot.data!) {
-                    return SetUserScreen();
+                    if (islogedIn) {
+                      return DisplayingImagesScreen();
+                    } else {
+                      return SetUserScreen();
+                    }
                     // return OpenImageScreen();
                   } else {
                     return Scaffold(

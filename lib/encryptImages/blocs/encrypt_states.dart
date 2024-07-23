@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 
 import 'package:data_protector/encryptImages/wrappers/image_file_wrapper.dart';
 import 'package:equatable/equatable.dart';
@@ -15,11 +14,11 @@ class EncryptDone extends EncryptState {}
 
 class Encrypting extends EncryptState {}
 
+// ignore: must_be_immutable
 class EncryptFailed extends EncryptState {
   String error;
   EncryptFailed({required this.error});
   @override
-  // TODO: implement props
   List<Object> get props => [error];
 }
 
@@ -33,6 +32,7 @@ class DecryptDone extends DecryptState {}
 
 class Decrypting extends DecryptState {}
 
+// ignore: must_be_immutable
 class DecryptFailed extends DecryptState {
   String error;
   DecryptFailed({required this.error});
@@ -51,6 +51,7 @@ class DeleteFolderDone extends DeleteFolderState {}
 
 class DeletingFolder extends DeleteFolderState {}
 
+// ignore: must_be_immutable
 class DeleteFolderFailed extends DeleteFolderState {
   String error;
   DeleteFolderFailed({required this.error});
@@ -69,6 +70,7 @@ class CreateNewFolderDone extends CreateNewFolderState {}
 
 class CreatingNewFolder extends CreateNewFolderState {}
 
+// ignore: must_be_immutable
 class CreateNewFolderFailed extends CreateNewFolderState {
   String error;
   CreateNewFolderFailed({required this.error});
@@ -95,7 +97,6 @@ class GettingImagesFailed extends GetImagesState {
   String error;
   GettingImagesFailed({required this.error});
   @override
-  // TODO: implement props
   List<Object> get props => [error];
 }
 
