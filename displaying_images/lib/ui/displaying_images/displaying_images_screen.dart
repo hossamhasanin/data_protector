@@ -36,7 +36,7 @@ class DisplayingImagesScreen extends StatelessWidget {
           buttonsIcons: const [
             Icons.create_new_folder,
             Icons.add_photo_alternate_outlined,
-            Icons.file_download
+            // Icons.file_download
           ],
           backgroundColor: Theme.of(context).cardColor,
           foregroundColor: Theme.of(context).primaryColor,
@@ -81,9 +81,9 @@ class DisplayingImagesScreen extends StatelessWidget {
               }
             },
             // import encrypted files to the app
-            () async {
-              _imagesController.showSelectReceivingMethodeDialog();
-            }
+            // () async {
+            //   _imagesController.showSelectReceivingMethodeDialog();
+            // }
           ]),
     );
   }

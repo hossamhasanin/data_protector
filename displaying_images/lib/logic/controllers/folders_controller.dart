@@ -1,6 +1,7 @@
 import 'package:base/base.dart';
 import 'package:base/datasource/File.dart';
 import 'package:displaying_images/logic/controllers/main_controller.dart';
+import 'package:displaying_images/logic/helper_functions.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
 import 'package:displaying_images/logic/usecase.dart';
 import 'package:get/get.dart';
@@ -12,7 +13,7 @@ class FoldersController extends GetxController {
   FoldersController(this._controller, this._useCase);
 
   addFolder(String fileName) async {
-    print("koko new folder path > "+_controller.currentPath.value);
+    print("koko new folder path > " + _controller.currentPath.value);
     File file = File(
         name: fileName,
         id: "0",
@@ -49,6 +50,12 @@ class FoldersController extends GetxController {
     if (_controller.selectionViewState.value.selectedFiles.isNotEmpty) {
       return;
     }
+
+    print("koko here "+exctractCurrentFolderName(_controller.currentPath.value));
+
+    if (exctractCurrentFolderName(_controller.currentPath.value) == "/") {
+          return;
+        }
 
     // remove last /
     _controller.currentPath.value = _controller.currentPath.value

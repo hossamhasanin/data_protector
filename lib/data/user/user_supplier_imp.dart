@@ -30,7 +30,7 @@ class UserSupplierImp extends UserSupplier{
       return _user;
     }
     var usersBox = await Hive.openBox<User>("users");
-    _user = usersBox.getAt(0);
+    _user = usersBox.isNotEmpty ? usersBox.getAt(0) : null;
     return _user;
   }
 

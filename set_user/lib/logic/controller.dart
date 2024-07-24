@@ -27,6 +27,14 @@ class SetUserController extends GetxController {
   }
 
   void setUser(String username,  String secretKey) async {
+    if (username.isEmpty || secretKey.isEmpty){
+      return;
+    }
+
+    if (username.length < 3 || secretKey.length < 3){
+      return;
+    }
+
     _showLoadingDialog(true);
 
     final result = await _dataSource.setUser(username, secretKey);

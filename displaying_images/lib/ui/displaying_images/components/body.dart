@@ -250,173 +250,178 @@ class BodyState extends State<Body> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.only(top: 40.0, left: 30.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Obx(() {
-                if (exctractCurrentFolderName(_controller.currentPath.value) !=
-                        "/" &&
-                    exctractCurrentFolderName(_controller.currentPath.value) !=
-                        "") {
-                  return IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      // goBack();
-                      _foldersController.goBack();
-                    },
-                  );
-                } else {
-                  return Container(
-                    height: 72.0,
-                    width: 72.0,
-                    decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                            image: AssetImage("assets/images/lock_icon.png"))),
-                  );
-                }
-              }),
-              Expanded(
-                child: Obx(() => Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Hi, ${_controller.viewState.value.user.name.capitalizeFirstLetter()}",
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: nameTextStyle,
-                        ),
-                        const SizedBox(
-                          height: 20.0,
-                        ),
-                        const Text(
-                          "Protect your files",
-                          style: subTextStyle,
-                        ),
-                      ],
-                    )),
-              ),
-              Obx(() {
-                var selectionViewState = _controller.selectionViewState.value;
-                if (selectionViewState.isSelectingImages) {
-                  return ImagesSelectedMenu(
-                    cancelSelection: () {
-                      _controller.cancelSelecting();
-                    },
-                    decryptImages: () {
-                      _imagesController.decryptImagesToGallery();
-                    },
-                    deleteImages: () {
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          _foldersController.goBack();
+        }
+      },
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.only(top: 40.0, left: 30.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Obx(() {
+                  if (exctractCurrentFolderName(_controller.currentPath.value) != "/") {
+                    return IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        // goBack();
+                        _foldersController.goBack();
+                      },
+                    );
+                  } else {
+                    return Container(
+                      height: 72.0,
+                      width: 72.0,
+                      decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: DecorationImage(
+                              image: AssetImage("assets/images/lock_icon.png"))),
+                    );
+                  }
+                }),
+                Expanded(
+                  child: Obx(() => Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Hi, ${_controller.viewState.value.user.name.capitalizeFirstLetter()}",
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: nameTextStyle,
+                          ),
+                          const SizedBox(
+                            height: 20.0,
+                          ),
+                          const Text(
+                            "Protect your files",
+                            style: subTextStyle,
+                          ),
+                        ],
+                      )),
+                ),
+                Obx(() {
+                  var selectionViewState = _controller.selectionViewState.value;
+                  if (selectionViewState.isSelectingImages) {
+                    return ImagesSelectedMenu(
+                      cancelSelection: () {
+                        _controller.cancelSelecting();
+                      },
+                      decryptImages: () {
+                        _imagesController.decryptImagesToGallery();
+                      },
+                      deleteImages: () {
+                        _controller.deleteFiles();
+                      },
+                      shareImages: () async {
+                        _imagesController.showSelectShareMethodeDialog();
+                      },
+                    );
+                  }
+      
+                  if (selectionViewState.isSelectingFolders) {
+                    return FolderSelectedMenu(deleteAllFolders: () {
                       _controller.deleteFiles();
-                    },
-                    shareImages: () async {
-                      _imagesController.showSelectShareMethodeDialog();
-                    },
+                    }, cancelSelecting: () {
+                      _controller.cancelSelecting();
+                    });
+                  }
+      
+                  return MainMenu(
+                    goToAboutUs: () async {},
                   );
-                }
-
-                if (selectionViewState.isSelectingFolders) {
-                  return FolderSelectedMenu(deleteAllFolders: () {
-                    _controller.deleteFiles();
-                  }, cancelSelecting: () {
-                    _controller.cancelSelecting();
-                  });
-                }
-
-                return MainMenu(
-                  goToAboutUs: () async {},
-                );
-              })
-              // Obx(() => buildMenuesRow())
-            ],
+                })
+                // Obx(() => buildMenuesRow())
+              ],
+            ),
           ),
-        ),
-        const SizedBox(
-          height: 20.0,
-        ),
-        Expanded(
-            child: Container(
-          padding: const EdgeInsets.all(20.0),
-          decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(30.0),
-                  topLeft: Radius.circular(30.0))),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Obx(() {
-                return PathTextWidget(path: _controller.currentPath.value);
-              }),
-              Obx(() {
-                var viewState = _controller.viewState.value;
-
-                if (viewState.loading) {
-                  return Container(
-                    margin: EdgeInsets.only(top: screenHeight / 5),
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
-
-                if (viewState.files.isNotEmpty) {
-                  return Expanded(
-                      child: SmartRefresher(
-                    enablePullDown: false,
-                    enablePullUp: !viewState.noMoreData,
-                    controller: _refreshController,
-                    onLoading: () async {
-                      print("koko load more");
-                      await _controller.loadMoreFiles();
-                      _refreshController.loadComplete();
-                    },
-                    child: FilesGridView(
-                      images: viewState.files,
-                      scrollController: _filesScrollController,
-                    ),
-                  ));
-                } else {
-                  return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        SizedBox(
-                          height: 50.0,
-                        ),
-                        Align(child: Text("No Encrypted Images Yet .")),
-                        SizedBox(
-                          height: 50.0,
-                        ),
-                      ]);
-                }
-              }),
-              // Obx(() {
-              //   var viewState = _controller.viewState.value;
-
-              //   if (viewState.loadingMore) {
-              //     return const SizedBox(
-              //       height: 50.0,
-              //       child: Center(
-              //         child: CircularProgressIndicator(),
-              //       ),
-              //     );
-              //   } else {
-              //     return Container();
-              //   }
-              // })
-            ],
+          const SizedBox(
+            height: 20.0,
           ),
-        ))
-      ],
+          Expanded(
+              child: Container(
+            padding: const EdgeInsets.all(20.0),
+            decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(30.0),
+                    topLeft: Radius.circular(30.0))),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Obx(() {
+                  return PathTextWidget(path: _controller.currentPath.value);
+                }),
+                Obx(() {
+                  var viewState = _controller.viewState.value;
+      
+                  if (viewState.loading) {
+                    return Container(
+                      margin: EdgeInsets.only(top: screenHeight / 5),
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+      
+                  if (viewState.files.isNotEmpty) {
+                    return Expanded(
+                        child: SmartRefresher(
+                      enablePullDown: false,
+                      enablePullUp: !viewState.noMoreData,
+                      controller: _refreshController,
+                      onLoading: () async {
+                        print("koko load more");
+                        await _controller.loadMoreFiles();
+                        _refreshController.loadComplete();
+                      },
+                      child: FilesGridView(
+                        images: viewState.files,
+                        scrollController: _filesScrollController,
+                      ),
+                    ));
+                  } else {
+                    return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          SizedBox(
+                            height: 50.0,
+                          ),
+                          Align(child: Text("No Encrypted Images Yet .")),
+                          SizedBox(
+                            height: 50.0,
+                          ),
+                        ]);
+                  }
+                }),
+                // Obx(() {
+                //   var viewState = _controller.viewState.value;
+      
+                //   if (viewState.loadingMore) {
+                //     return const SizedBox(
+                //       height: 50.0,
+                //       child: Center(
+                //         child: CircularProgressIndicator(),
+                //       ),
+                //     );
+                //   } else {
+                //     return Container();
+                //   }
+                // })
+              ],
+            ),
+          ))
+        ],
+      ),
     );
   }
 

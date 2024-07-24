@@ -50,14 +50,14 @@ class ImagesSelectedMenu extends StatelessWidget {
                   // decrypt the selected images
                   deleteImages();
                 }),
-            IconButton(
-                icon: const Icon(
-                  Icons.share,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  shareImages();
-                })
+            // IconButton(
+            //     icon: const Icon(
+            //       Icons.share,
+            //       color: Colors.white,
+            //     ),
+            //     onPressed: () {
+            //       shareImages();
+            //     })
           ],
         ),
       ],
