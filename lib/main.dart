@@ -6,6 +6,7 @@ import 'package:displaying_images/logic/helper_functions.dart';
 import 'package:displaying_images/ui/displaying_images/displaying_images_screen.dart';
 import 'package:displaying_images/ui/open_image/open_image_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
         debugShowCheckedModeBanner: false,
         title: APP_NAME,
+        builder: EasyLoading.init(),
         getPages: [
           GetPage(name: sendImagesScreen, page: () => SendingScreen()),
           GetPage(name: receiveImagesScreen, page: () => ReceivingScreen()),

@@ -16,6 +16,7 @@ import 'package:displaying_images/logic/usecase.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_ui/progess_state_dialog/progress_dialog_state.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 class ImagesController extends GetxController {
   final DisplayingImagesUseCase _useCase;
@@ -94,18 +95,19 @@ class ImagesController extends GetxController {
           successMessage: "",
           error: result.code,
           success: false,
-          progress: 0);
-
+          progress: 1);
+      // s.kill();
       print("error with encryption :" + result.toString());
+      // return;
     } else {
       List<List<Uint8List>> encryptedResults = result as List<List<Uint8List>>;
       var finished = 0;
       for (var i = 0; i < imagesToEncrypt.length; i++) {
-        await _useCase.saveEncryptedImage(imagesToEncrypt[i].file!,
-            encryptedResults[i][0], encryptedResults[i][1], dir.path);
+        await _useCase.saveEncryptedImage(imagesToEncrypt[i].file!, encryptedResults[i][0], encryptedResults[i][1], dir.path);
       print("encryption done successfully and saved images files");
         // await deletePhysicalFile(imagesToEncrypt[i].imageApsolutePath);
-        File(imagesToEncrypt[i].imageApsolutePath).deleteSync();
+        // File(imagesToEncrypt[i].imageApsolutePath).deleteSync();
+      // PhotoManager.editor.deleteWithIds([imagesToEncrypt[i].id]);
         print("encryption done successfully and deleted images files");
         finished += 1;
         encryptionState.value = encryptionState.value.copy(
@@ -115,7 +117,7 @@ class ImagesController extends GetxController {
             progress: finished / imagesToEncrypt.length);
       }
       print("encryption done successfully completed");
-      // PhotoManager.editor.deleteWithIds(ids);
+      await PhotoManager.editor.deleteWithIds(ids);
 
       encryptionState.value = encryptionState.value.copy(
           loading: false,

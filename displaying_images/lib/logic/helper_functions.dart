@@ -25,24 +25,24 @@ String exctractCurrentFolderName(String name) {
 }
 
 Future deletePhysicalFile(String fileName) async {
-  var storagePermission = Permission.storage;
-  var manageStoragePermission = Permission.manageExternalStorage;
-  if (await storagePermission.status.isGranted &&
-      await manageStoragePermission.status.isGranted) {
-    var file = File(fileName);
-    return file.existsSync() ? file.deleteSync() : throw "File $fileName not found";
-  } else {
-    await storagePermission.request();
-    await manageStoragePermission.request();
-    return deletePhysicalFile(fileName);
+  var deviceInfo = await DeviceInfoPlugin().androidInfo;
+  if (deviceInfo.version.sdkInt! < 29) {
+    var storagePermission = Permission.storage;
+    if (!(await storagePermission.status.isGranted)){
+      await storagePermission.request();
+    } else {
+      throw "Error dont have permissions";
+    }
   }
+  var file = File(fileName);
+  return file.existsSync() ? file.deleteSync() : throw "File $fileName not found";
 }
 
 Future<bool> requestRequiredPermissions() async {
   if (Platform.isAndroid) {
     var deviceInfo = await DeviceInfoPlugin().androidInfo;
     if (deviceInfo.version.sdkInt! > 29) {
-      return await _requestMainPermisions();
+      return true;
     } else {
       var storagePermission = Permission.storage;
       if (await storagePermission.status.isGranted) {
@@ -58,14 +58,14 @@ Future<bool> requestRequiredPermissions() async {
 }
 
 Future<bool> _requestMainPermisions() async {
-  var storagePermission = Permission.storage;
-  var manageStoragePermission = Permission.manageExternalStorage;
-  if (await storagePermission.status.isGranted &&
-      await manageStoragePermission.status.isGranted) {
+  var photosPermission = Permission.photos;
+  var videosPermission = Permission.videos;
+  if (await photosPermission.status.isGranted &&
+      await videosPermission.status.isGranted) {
     return true;
   } else {
-    var requestedStorage = await storagePermission.request();
-    var requestedManageStorage = await manageStoragePermission.request();
+    var requestedStorage = await photosPermission.request();
+    var requestedManageStorage = await videosPermission.request();
     if (requestedManageStorage.isGranted && requestedStorage.isGranted) {
       return true;
     } else {
@@ -75,36 +75,45 @@ Future<bool> _requestMainPermisions() async {
 }
 
 Future deletePhysicalDirectory(String dirName) async {
-  var permission = Permission.storage;
-  if (await permission.status.isGranted) {
-    var dir = Directory(dirName);
-    return dir.existsSync()
-        ? dir.delete(recursive: true)
-        : throw "File $dirName not found";
-  } else {
-    await permission.request();
-    return deletePhysicalDirectory(dirName);
+  var deviceInfo = await DeviceInfoPlugin().androidInfo;
+  if (deviceInfo.version.sdkInt! < 29) {
+    var permission = Permission.storage;
+    if (!(await permission.status.isGranted)) {
+      await permission.request();
+    } else {
+      throw "Error dont have permissions";
+    }
   }
+  var dir = Directory(dirName);
+  return dir.existsSync()
+      ? dir.delete(recursive: true)
+      : throw "File $dirName not found";
 }
 
 Future<File> savePhysicalImage(Uint8List image, String fileName) async {
-  var permission = Permission.storage;
-  if (await permission.status.isGranted) {
-    return File(fileName).writeAsBytes(image);
-  } else {
-    await permission.request();
-    return savePhysicalImage(image, fileName);
+  var deviceInfo = await DeviceInfoPlugin().androidInfo;
+  if (deviceInfo.version.sdkInt! < 29) {
+    var permission = Permission.storage;
+    if (!(await permission.status.isGranted)) {
+      await permission.request();
+    } else {
+      throw "Error dont have permissions";
+    }
   }
+  return await File(fileName).writeAsBytes(image);
 }
 
 Future createDirectory(String path) async {
-  var permission = Permission.storage;
-  if (await permission.status.isGranted) {
-    await Directory(path).create();
-  } else {
-    await permission.request();
-    return createDirectory(path);
+  var deviceInfo = await DeviceInfoPlugin().androidInfo;
+  if (deviceInfo.version.sdkInt! < 29) {
+    var permission = Permission.storage;
+    if (!(await permission.status.isGranted)) {
+      await permission.request();
+    } else {
+      throw "Error dont have permissions";
+    }
   }
+  return await Directory(path).create();
 }
 
 String getThumbName(String fileName) {
