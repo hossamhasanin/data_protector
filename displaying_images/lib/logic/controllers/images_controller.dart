@@ -100,7 +100,7 @@ class ImagesController extends GetxController {
       print("error with encryption :" + result.toString());
       // return;
     } else {
-      List<List<Uint8List>> encryptedResults = result as List<List<Uint8List>>;
+      List<List> encryptedResults = result as List<List>;
       var finished = 0;
       for (var i = 0; i < imagesToEncrypt.length; i++) {
         await _useCase.saveEncryptedImage(imagesToEncrypt[i].file!, encryptedResults[i][0], encryptedResults[i][1], dir.path);

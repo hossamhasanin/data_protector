@@ -7,6 +7,7 @@ import 'package:base/Constants.dart';
 import 'package:base/base.dart';
 import 'package:base/datasource/File.dart' as F;
 import 'package:base/encrypt/encryption.dart';
+import 'package:displaying_images/logic/crypto_manager.dart';
 import 'package:displaying_images/logic/datasource.dart';
 import 'package:displaying_images/logic/models/decrypt_isolate_vars.dart';
 import 'package:displaying_images/logic/error_codes.dart';
@@ -104,7 +105,7 @@ fetchFilesIsolate(DecryptIsolateVars vars) async {
 }
 
 Future encryptFilesIsolate(EncryptIsolateVars vars) async {
-  List<Future<List<Uint8List>> Function()> encryptTasks = [];
+  List<Future<List> Function()> encryptTasks = [];
 
   print("Read image files as bytes");
   for (var image in vars.images) {
@@ -262,25 +263,48 @@ class DisplayingImagesUseCase {
     return decryptedImage;
   }
 
-  Future<List<Uint8List>> encryptImage(FileWrapper imageWrapper,
-      Uint8List image, String key, String osDir) async {
-    var imagePath = "$osDir${imageWrapper.file.path}${imageWrapper.file.name}";
-    var thumbFilePath =
-        "$osDir${imageWrapper.file.path}${getThumbName(imageWrapper.file.name)}";
-    print("koko image path >" + imagePath);
-    print("koko thumb image path >" + thumbFilePath);
+  // Future<List<Uint8List>> encryptImage(FileWrapper imageWrapper,
+  //     Uint8List image, String key, String osDir) async {
+  //   // var imagePath = "$osDir${imageWrapper.file.path}${imageWrapper.file.name}";
+  //   // var thumbFilePath =
+  //   //     "$osDir${imageWrapper.file.path}${getThumbName(imageWrapper.file.name)}";
+  //   // print("koko image path >" + imagePath);
+  //   // print("koko thumb image path >" + thumbFilePath);
 
-    var encryptedImage = _encrypt.encrypt(image, key);
-    var encryptedThumb = _encrypt.encrypt(imageWrapper.thumbUint8list!, key);
-    print("koko image encryption finished");
-    return [encryptedImage.bytes, encryptedThumb.bytes];
+  //   // var encryptedImage = _encrypt.encrypt(image, key);
+  //   // var encryptedThumb = _encrypt.encrypt(imageWrapper.thumbUint8list!, key);
+  //   // print("koko image encryption finished");
+  //   // return [encryptedImage.bytes, encryptedThumb.bytes];
+  // }
+
+  Future<List> encryptImage(FileWrapper imageWrapper,
+      Uint8List image, String key, String osDir) async {
+    // var imagePath = "$osDir${imageWrapper.file.path}${imageWrapper.file.name}";
+    // var thumbFilePath =
+    //     "$osDir${imageWrapper.file.path}${getThumbName(imageWrapper.file.name)}";
+    // print("koko image path >" + imagePath);
+    // print("koko thumb image path >" + thumbFilePath);
+
+    // var encryptedImage = _encrypt.encrypt(image, key);
+    // var encryptedThumb = _encrypt.encrypt(imageWrapper.thumbUint8list!, key);
+    // print("koko image encryption finished");
+    // return [encryptedImage.bytes, encryptedThumb.bytes];
+
+    CryptoManager cryptoManager = CryptoManager(encrypt: _encrypt);
+    return cryptoManager.encrypt(image, imageWrapper.thumbUint8list!, key); 
   }
 
-  Future saveEncryptedImage(F.File file, Uint8List encryptedImage,
+  Future saveEncryptedImage(F.File file, List<Uint8List> encryptedImageParts,
       Uint8List encryptedThumb, String osDir) async {
-    var imagePath = "$osDir${file.path}${file.name}";
     var thumbFilePath = "$osDir${file.path}${getThumbName(file.name)}";
-    await savePhysicalImage(encryptedImage, imagePath);
+    var i = 0;
+    for (var part in encryptedImageParts) {
+      final imageNameExt = file.name.split(".$ENC_EXTENSION");
+      var imagePath = "$osDir${file.path}${imageNameExt[0]}_$i.$ENC_EXTENSION";
+      print("koko encrpted image file part path > " + imagePath);
+      await savePhysicalImage(part, imagePath);
+      i++;
+    }
     await savePhysicalImage(encryptedThumb, thumbFilePath);
     await _dataSource.addFile(file);
     print("koko saved successfully ");
@@ -313,7 +337,16 @@ class DisplayingImagesUseCase {
         print("koko > deleted " + file.id);
       });
       if (file.type == SavedFileType.IMAGE.index) {
-        await deletePhysicalFile(fileName);
+        final imageNameExt = file.name.split(".$ENC_EXTENSION");
+        var i = 0;
+        while (true){
+          final path = "${dir.path}${file.path}${imageNameExt[0]}_$i.$ENC_EXTENSION";
+          final image = File(path);
+          if (!(await image.exists())) break;
+          print(path);
+          await deletePhysicalFile(path);
+          i++;
+        }
         if (File(dir.path + file.path + getThumbName(file.name)).existsSync()) {
           await deletePhysicalFile(getThumbName(fileName));
         }
