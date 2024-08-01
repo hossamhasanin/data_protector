@@ -1,6 +1,7 @@
 import 'package:base/base.dart';
 import 'package:base/datasource/File.dart';
 import 'package:displaying_images/logic/controllers/main_controller.dart';
+import 'package:displaying_images/logic/crypto_manager.dart';
 import 'package:displaying_images/logic/helper_functions.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
 import 'package:displaying_images/logic/usecase.dart';

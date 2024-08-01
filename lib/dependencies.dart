@@ -5,6 +5,7 @@ import 'package:data_protector/data/set_user/set_user_datasource_impl.dart';
 import 'package:data_protector/data/share_images/share_images_datasource_imp.dart';
 import 'package:data_protector/data/user/user_supplier.dart';
 import 'package:data_protector/data/user/user_supplier_imp.dart';
+import 'package:displaying_images/logic/crypto_manager.dart';
 import 'package:displaying_images/logic/datasource.dart';
 import 'package:displaying_images/logic/usecase.dart';
 import 'package:get/get.dart';
@@ -47,4 +48,5 @@ void injection() {
   Get.put(DisplayingImagesUseCase(Get.find(), Get.find()));
   Get.put<ShareImagesDataSource>(ShareImagesDataSourceImp());
   Get.put<SetUserDataSource>(SetUserDataSourceImpl(Get.find()));
+  Get.put(CryptoManager(encrypt: Get.find()));
 }

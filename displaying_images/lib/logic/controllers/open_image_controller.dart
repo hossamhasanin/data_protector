@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -17,10 +18,14 @@ class OpenImageController extends GetxController {
 
   late final DisplayingImagesUseCase _useCase;
   late final String encryptionKey;
+  late final CryptoManager _cryptoManager;
   OpenImageViewState viewState = OpenImageViewState.initial();
   int currentIndex = 0;
+  late final StreamSubscription<Uint8List> _readyImageStreamSubscription;
 
-  OpenImageController(this.images, this.encryptionKey, this._useCase);
+  OpenImageController(this.images, this.encryptionKey, this._useCase){
+    _cryptoManager = Get.find();
+  }
 
   loadImage(int index) async {
     currentIndex = index;
@@ -39,13 +44,13 @@ class OpenImageController extends GetxController {
     //         key: encryptionKey));
     // var result = await recievingPort.first;
     // recievingPort.close();
-    final cryptoManager = CryptoManager(encrypt: Get.find());
+    
     final imageNameExt = images[index].file.name.split(".$ENC_EXTENSION");
     var i = 0;
     List<Uint8List> encryptedParts = [];
     while (true){
       final image = File("${dir!.path}${images[index].file.path}${imageNameExt[0]}_$i.$ENC_EXTENSION");
-      print("${dir!.path}${images[index].file.path}${imageNameExt[0]}_$i.$ENC_EXTENSION");
+      print("${dir.path}${images[index].file.path}${imageNameExt[0]}_$i.$ENC_EXTENSION");
       if (!(await image.exists())) break;
 
       encryptedParts.add(await image.readAsBytes());
@@ -54,21 +59,29 @@ class OpenImageController extends GetxController {
     
 
     print("koko found image parts > "+ encryptedParts.length.toString());
-    final result = await cryptoManager.decryptImageWithLimitedIsolates(encryptedParts, encryptionKey);
+    await _cryptoManager.spawnIsolates();
+    await _cryptoManager.decryptImageWithLimitedIsolates(encryptedParts, encryptionKey);
+  }
 
-    if (result is DataException) {
-      viewState = viewState.copy(
-          thumbImageBytes: Uint8List.fromList([]),
-          error: (result as DataException).code,
-          currentImageBytes: Uint8List.fromList([]));
-      update([index]);
-    } else {
-      // var images = result as List<Uint8List>;
+  listenToReadyImageStream() {
+    _readyImageStreamSubscription = _cryptoManager.readyImageStream.listen((image) {
       viewState = viewState.copy(
         thumbImageBytes: Uint8List.fromList([]),
         error: "",
-        currentImageBytes: result);
-      update([index]);
-    }
+        currentImageBytes: image);
+      update([currentIndex]);
+    }, onError: (e) {
+      viewState = viewState.copy(
+          thumbImageBytes: Uint8List.fromList([]),
+          error: "Data decryption error",
+          currentImageBytes: Uint8List.fromList([]));
+    });
+  }
+
+  @override
+  void onClose() {
+    _readyImageStreamSubscription.cancel();
+    _cryptoManager.clean();
+    super.onClose();
   }
 }

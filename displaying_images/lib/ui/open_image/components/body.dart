@@ -26,6 +26,7 @@ class _BodyState extends State<Body> {
         args[0] as List<FileWrapper>, args[1] as String, Get.find()));
     int selectedImageToOpen = args[2] as int;
     _pageController = PageController(initialPage: selectedImageToOpen);
+    _controller.listenToReadyImageStream();
   }
 
   @override
