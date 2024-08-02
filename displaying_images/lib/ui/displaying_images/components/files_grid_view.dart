@@ -2,7 +2,6 @@ import 'package:base/base.dart';
 import 'package:displaying_images/logic/controllers/folders_controller.dart';
 import 'package:displaying_images/logic/controllers/images_controller.dart';
 import 'package:displaying_images/logic/controllers/main_controller.dart';
-import 'package:displaying_images/logic/crypto_manager.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

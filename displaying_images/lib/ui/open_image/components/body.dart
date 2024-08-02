@@ -23,7 +23,7 @@ class _BodyState extends State<Body> {
     List args = Get.arguments;
 
     _controller = Get.put(OpenImageController(
-        args[0] as List<FileWrapper>, args[1] as String, Get.find()));
+        args[0] as List<FileWrapper>, args[1] as String));
     int selectedImageToOpen = args[2] as int;
     _pageController = PageController(initialPage: selectedImageToOpen);
     _controller.listenToReadyImageStream();

@@ -28,6 +28,7 @@ class _DisplayImageState extends State<DisplayImage> {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return GetBuilder<OpenImageController>(
         init: _controller,
         id: widget.index,
@@ -43,11 +44,17 @@ class _DisplayImageState extends State<DisplayImage> {
             );
           }
 
-          return SizedBox(
-            width: double.infinity,
-            height: double.infinity,
-            child: Image.memory(viewState.thumbImageBytes.isEmpty ?
-             viewState.currentImageBytes : viewState.thumbImageBytes , fit: BoxFit.cover),
+          return AnimatedCrossFade(
+            firstChild: SizedBox(
+              width: size.width,
+          height: size.height,
+              child: Image.memory(viewState.thumbImageBytes, fit: BoxFit.contain,)),
+            secondChild: SizedBox(
+              width: size.width,
+          height: size.height,
+              child: Image.memory(viewState.currentImageBytes, fit: BoxFit.contain,)),
+            crossFadeState: viewState.currentImageBytes.isNotEmpty ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 500),
           );
         });
   }

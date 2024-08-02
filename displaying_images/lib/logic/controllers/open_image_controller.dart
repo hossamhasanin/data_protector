@@ -1,29 +1,20 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:isolate';
 import 'dart:typed_data';
-
-import 'package:base/Constants.dart';
-import 'package:base/base.dart';
 import 'package:displaying_images/logic/crypto_manager.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
-import 'package:displaying_images/logic/models/decrypt_to_gallery_vars.dart';
-import 'package:displaying_images/logic/usecase.dart';
 import 'package:displaying_images/logic/viewstates/open_image_viewstate.dart';
 import 'package:get/get.dart';
-import 'package:path_provider/path_provider.dart';
 
 class OpenImageController extends GetxController {
   late final List<FileWrapper> images;
 
-  late final DisplayingImagesUseCase _useCase;
   late final String encryptionKey;
   late final CryptoManager _cryptoManager;
   OpenImageViewState viewState = OpenImageViewState.initial();
   int currentIndex = 0;
   late final StreamSubscription<Uint8List> _readyImageStreamSubscription;
 
-  OpenImageController(this.images, this.encryptionKey, this._useCase){
+  OpenImageController(this.images, this.encryptionKey){
     _cryptoManager = Get.find();
   }
 
@@ -55,7 +46,6 @@ class OpenImageController extends GetxController {
   listenToReadyImageStream() {
     _readyImageStreamSubscription = _cryptoManager.readyImageStream.listen((image) {
       viewState = viewState.copy(
-        thumbImageBytes: Uint8List.fromList([]),
         error: "",
         currentImageBytes: image);
       update([currentIndex]);
