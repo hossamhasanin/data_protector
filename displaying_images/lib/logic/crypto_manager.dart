@@ -4,7 +4,10 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
+import 'package:base/Constants.dart';
 import 'package:base/encrypt/encryption.dart';
+import 'package:displaying_images/logic/helper_functions.dart';
+import 'package:path_provider/path_provider.dart';
 
 void decryptPart(List vars) {
   ReceivePort receivePort = ReceivePort();
@@ -15,6 +18,7 @@ void decryptPart(List vars) {
 
   receivePort.listen((message) {
     // final SendPort replyTo = message[1];
+    print("koko process image here");
 
     Uint8List encryptedPart = message[0];
     String key = message[1];
@@ -87,7 +91,7 @@ class CryptoManager {
     }
   }
 
-  Future decryptImageWithLimitedIsolates(List<Uint8List> encryptedParts, String key) async {
+  decryptImageWithLimitedIsolates(List<Uint8List> encryptedParts, String key) {
     stopwatch = Stopwatch()..start();
     int numSplits = encryptedParts.length;
     int numCores = getNumberOfCores();
@@ -120,6 +124,36 @@ class CryptoManager {
     _receivePortsSupscriptions.clear();
     _sendPorts.clear();
     _isolates.clear();
+  }
+
+  static Future<List<Uint8List>> loadEncryptedParts(String fileName, String path) async {
+    var dir = await getExternalStorageDirectory();
+    final imageNameExt = fileName.split(".$ENC_EXTENSION");
+    var i = 0;
+    List<Uint8List> encryptedParts = [];
+    while (true){
+      final image = File("${dir!.path}$path${imageNameExt[0]}_$i.$ENC_EXTENSION");
+      print("${dir.path}$path${imageNameExt[0]}_$i.$ENC_EXTENSION");
+      if (!(await image.exists())) break;
+
+      encryptedParts.add(await image.readAsBytes());
+      i += 1;
+    }
+    return encryptedParts;
+  }
+
+  static Future deleteEncryptedParts(String fileName, String filePath) async {
+    var dir = await getExternalStorageDirectory();
+    final imageNameExt = fileName.split(".$ENC_EXTENSION");
+    var i = 0;
+    while (true){
+      final path = "${dir!.path}$filePath${imageNameExt[0]}_$i.$ENC_EXTENSION";
+      final image = File(path);
+      if (!(await image.exists())) break;
+      print(path);
+      await deletePhysicalFile(path);
+      i++;
+    }
   }
 }
 

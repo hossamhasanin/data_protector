@@ -337,16 +337,7 @@ class DisplayingImagesUseCase {
         print("koko > deleted " + file.id);
       });
       if (file.type == SavedFileType.IMAGE.index) {
-        final imageNameExt = file.name.split(".$ENC_EXTENSION");
-        var i = 0;
-        while (true){
-          final path = "${dir.path}${file.path}${imageNameExt[0]}_$i.$ENC_EXTENSION";
-          final image = File(path);
-          if (!(await image.exists())) break;
-          print(path);
-          await deletePhysicalFile(path);
-          i++;
-        }
+        await CryptoManager.deleteEncryptedParts(file.name, file.path);
         if (File(dir.path + file.path + getThumbName(file.name)).existsSync()) {
           await deletePhysicalFile(getThumbName(fileName));
         }
@@ -392,7 +383,7 @@ class DisplayingImagesUseCase {
       await savePhysicalImage(image, "${decryptedImagesPath.path}/$name");
       await PhotoManager.editor
           .saveImageWithPath("${decryptedImagesPath.path}/$name", title: name);
-      await deletePhysicalFile(dir.path + file.path + file.name);
+      await CryptoManager.deleteEncryptedParts(file.name, file.path);
       await deletePhysicalFile(dir.path + file.path + getThumbName(file.name));
       await _dataSource.deleteFile(file);
     } catch (e) {

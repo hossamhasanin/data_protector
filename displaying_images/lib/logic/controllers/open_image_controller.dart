@@ -32,7 +32,6 @@ class OpenImageController extends GetxController {
     viewState = viewState.copy(
         thumbImageBytes: images[currentIndex].thumbUint8list, error: "", currentImageBytes: Uint8List.fromList([]));
     update([index]);
-    var dir = await getExternalStorageDirectory();
     // var recievingPort = ReceivePort();
     // await Isolate.spawn<DecryptToGalleryVars>(
         // decryptImageIsolate,
@@ -45,22 +44,12 @@ class OpenImageController extends GetxController {
     // var result = await recievingPort.first;
     // recievingPort.close();
     
-    final imageNameExt = images[index].file.name.split(".$ENC_EXTENSION");
-    var i = 0;
-    List<Uint8List> encryptedParts = [];
-    while (true){
-      final image = File("${dir!.path}${images[index].file.path}${imageNameExt[0]}_$i.$ENC_EXTENSION");
-      print("${dir.path}${images[index].file.path}${imageNameExt[0]}_$i.$ENC_EXTENSION");
-      if (!(await image.exists())) break;
-
-      encryptedParts.add(await image.readAsBytes());
-      i += 1;
-    }
+    final encryptedParts = await CryptoManager.loadEncryptedParts(images[index].file.name, images[index].file.path);
     
 
     print("koko found image parts > "+ encryptedParts.length.toString());
     await _cryptoManager.spawnIsolates();
-    await _cryptoManager.decryptImageWithLimitedIsolates(encryptedParts, encryptionKey);
+    _cryptoManager.decryptImageWithLimitedIsolates(encryptedParts, encryptionKey);
   }
 
   listenToReadyImageStream() {
@@ -81,7 +70,7 @@ class OpenImageController extends GetxController {
   @override
   void onClose() {
     _readyImageStreamSubscription.cancel();
-    _cryptoManager.clean();
+    // _cryptoManager.clean();
     super.onClose();
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -6,6 +7,8 @@ import 'package:base/Constants.dart';
 import 'package:base/base.dart';
 // ignore: library_prefixes
 import 'package:base/datasource/File.dart' as F;
+import 'package:displaying_images/displaying_images.dart';
+import 'package:displaying_images/logic/controllers/decrypt_to_gallery_params.dart';
 import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/error_codes.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
@@ -29,11 +32,32 @@ class ImagesController extends GetxController {
   ReceivePort? decryptToGalleryIsolatePort;
   ReceivePort? decryptToMemoryIsolatePort;
 
+  final CryptoManager _cryptoManager = Get.find();
+
+  late final StreamSubscription<List> _decryptionIsolatesListener;
+
+  final StreamController<DecryptToGalleryParams> _decryptToGalleryParams = StreamController();
+
   late final Function() showEncryptionStateDialog;
   late final Function() showSelectShareMethodeDialog;
   late final Function() showSelectReceivingMethodeDialog;
 
   ImagesController(this._controller, this._useCase);
+
+  @override
+  void onInit() {
+    super.onInit();
+    
+    _listenToDeryptionIsolates();
+  }
+  
+
+  @override
+  void onClose() {
+    _decryptionIsolatesListener.cancel();
+    _decryptToGalleryParams.close();
+    super.onClose();
+  }
 
   Future encryptImages(List<EncryptImageWrapper> imagesToEncrypt) async {
     print("koko encrypt > " + imagesToEncrypt.length.toString());
@@ -131,6 +155,57 @@ class ImagesController extends GetxController {
     }
   }
 
+  _listenToDeryptionIsolates() {
+    int finishedImages = 0;
+    int currentImage = 0;
+    _decryptionIsolatesListener = zipTowStreams(_decryptToGalleryParams.stream, _cryptoManager.readyImageStream).listen((data) async {
+      Uint8List image = data[1] as Uint8List;
+      DecryptToGalleryParams params = data[0] as DecryptToGalleryParams;
+      await _useCase.decryptImagesBackToGallery(
+            params.imageFiles[currentImage], image);
+        encryptionState.value = encryptionState.value.copy(
+            loading: true,
+            error: "",
+            success: false,
+            progress: finishedImages / params.imageFiles.length);
+
+      currentImage += 1;
+      finishedImages += 1;
+
+      print("koko finished images > "+ finishedImages.toString());
+
+      if (finishedImages == params.imageFiles.length) {
+        encryptionState.value = encryptionState.value.copy(
+          loading: false,
+          error: "",
+          success: true,
+          successMessage: "Decryption done successfully!",
+          progress: 1);
+
+        _controller.selectionViewState.value = _controller.selectionViewState.value
+            .copy(
+                selectedFiles: {},
+                isSelectingImages: false,
+                isSelectingFolders: false);
+
+        _controller.viewState.value =
+            _controller.viewState.value.copy(files: params.filesAfterDecrypting.values.toList());
+        
+        currentImage = 0;
+        finishedImages = 0;
+      }
+    });
+  }
+
+  Stream<List> zipTowStreams(Stream stream1, Stream stream2) async* {
+    StreamIterator iterator1 = StreamIterator(stream1);
+    StreamIterator iterator2 = StreamIterator(stream2);
+
+    while (await iterator1.moveNext() && await iterator2.moveNext()){
+      yield[iterator1.current, iterator2.current];
+    }
+  }
+
   decryptImagesToGallery() async {
     if (_controller.selectionViewState.value.isSelectingFolders) {
       return;
@@ -169,64 +244,76 @@ class ImagesController extends GetxController {
       for (var e = 0; e < _controller.viewState.value.files.length; e++)
         e: _controller.viewState.value.files[e]
     };
+
+    await _cryptoManager.spawnIsolates();
+    final vars = DecryptToGalleryParams(imageFiles: imageFiles, filesAfterDecrypting: files);
+    
     for (var selected
         in _controller.selectionViewState.value.selectedFiles.keys) {
-      imageFiles.add(_controller.viewState.value.files[selected].file);
+      final file  = _controller.viewState.value.files[selected].file;
+      
+      final encryptedParts = await CryptoManager.loadEncryptedParts(file.name, file.path);
+
+      _cryptoManager.decryptImageWithLimitedIsolates(encryptedParts, _controller.encryptionKey);
+      _decryptToGalleryParams.add(vars);
+
+      imageFiles.add(file);
       files.remove(selected);
     }
 
-    var dir = await getExternalStorageDirectory();
-    decryptToGalleryIsolatePort = ReceivePort();
-    await Isolate.spawn<DecryptToGalleryVars>(
-        decryptImageIsolate,
-        DecryptToGalleryVars(
-            isolateStatePort: decryptToGalleryIsolatePort!.sendPort,
-            files: imageFiles,
-            useCase: _useCase,
-            osDir: dir!.path,
-            key: _controller.encryptionKey));
-    var result = await decryptToGalleryIsolatePort!.first;
-    decryptToGalleryIsolatePort!.close();
-    decryptToGalleryIsolatePort = null;
 
-    if (result is DataException) {
-      encryptionState.value = encryptionState.value.copy(
-          loading: false,
-          loadingMessage: "",
-          successMessage: "",
-          error: result.code,
-          success: false,
-          progress: 0);
-    } else {
-      List<Uint8List> decryptedResults = result as List<Uint8List>;
-      var finished = 0;
-      for (var i = 0; i < imageFiles.length; i++) {
-        await _useCase.decryptImagesBackToGallery(
-            imageFiles[i], decryptedResults[i]);
-        finished += 1;
-        encryptionState.value = encryptionState.value.copy(
-            loading: true,
-            error: "",
-            success: false,
-            progress: finished / imageFiles.length);
-      }
+    // var dir = await getExternalStorageDirectory();
+    // decryptToGalleryIsolatePort = ReceivePort();
+    // await Isolate.spawn<DecryptToGalleryVars>(
+    //     decryptImageIsolate,
+    //     DecryptToGalleryVars(
+    //         isolateStatePort: decryptToGalleryIsolatePort!.sendPort,
+    //         files: imageFiles,
+    //         useCase: _useCase,
+    //         osDir: dir!.path,
+    //         key: _controller.encryptionKey));
+    // var result = await decryptToGalleryIsolatePort!.first;
+    // decryptToGalleryIsolatePort!.close();
+    // decryptToGalleryIsolatePort = null;
 
-      encryptionState.value = encryptionState.value.copy(
-          loading: false,
-          error: "",
-          success: true,
-          successMessage: "Decryption done successfully!",
-          progress: 1);
-    }
+    // if (result is DataException) {
+    //   encryptionState.value = encryptionState.value.copy(
+    //       loading: false,
+    //       loadingMessage: "",
+    //       successMessage: "",
+    //       error: result.code,
+    //       success: false,
+    //       progress: 0);
+    // } else {
+    //   List<Uint8List> decryptedResults = result as List<Uint8List>;
+    //   var finished = 0;
+    //   for (var i = 0; i < imageFiles.length; i++) {
+    //     await _useCase.decryptImagesBackToGallery(
+    //         imageFiles[i], decryptedResults[i]);
+    //     finished += 1;
+    //     encryptionState.value = encryptionState.value.copy(
+    //         loading: true,
+    //         error: "",
+    //         success: false,
+    //         progress: finished / imageFiles.length);
+    //   }
 
-    _controller.selectionViewState.value = _controller.selectionViewState.value
-        .copy(
-            selectedFiles: {},
-            isSelectingImages: false,
-            isSelectingFolders: false);
+    //   encryptionState.value = encryptionState.value.copy(
+    //       loading: false,
+    //       error: "",
+    //       success: true,
+    //       successMessage: "Decryption done successfully!",
+    //       progress: 1);
+    // }
 
-    _controller.viewState.value =
-        _controller.viewState.value.copy(files: files.values.toList());
+    // _controller.selectionViewState.value = _controller.selectionViewState.value
+    //     .copy(
+    //         selectedFiles: {},
+    //         isSelectingImages: false,
+    //         isSelectingFolders: false);
+
+    // _controller.viewState.value =
+    //     _controller.viewState.value.copy(files: files.values.toList());
   }
 
   shareImages() async {
