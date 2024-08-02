@@ -40,7 +40,7 @@ class OpenImageController extends GetxController {
 
     print("koko found image parts > "+ encryptedParts.length.toString());
     await _cryptoManager.spawnIsolates();
-    _cryptoManager.decryptImageWithLimitedIsolates(encryptedParts, encryptionKey);
+    _cryptoManager.decryptImage(encryptedParts, encryptionKey);
   }
 
   listenToReadyImageStream() {

@@ -294,9 +294,7 @@ class DisplayingImagesUseCase {
     return cryptoManager.encrypt(image, imageWrapper.thumbUint8list!, key); 
   }
 
-  Future saveEncryptedImage(F.File file, List<Uint8List> encryptedImageParts,
-      Uint8List encryptedThumb, String osDir) async {
-    var thumbFilePath = "$osDir${file.path}${getThumbName(file.name)}";
+  Future saveEncryptedImage(F.File file, List<Uint8List> encryptedImageParts, String osDir) async {
     var i = 0;
     for (var part in encryptedImageParts) {
       final imageNameExt = file.name.split(".$ENC_EXTENSION");
@@ -305,9 +303,13 @@ class DisplayingImagesUseCase {
       await savePhysicalImage(part, imagePath);
       i++;
     }
-    await savePhysicalImage(encryptedThumb, thumbFilePath);
     await _dataSource.addFile(file);
     print("koko saved successfully ");
+  }
+
+  Future saveEncryptedThumb(Uint8List encryptedThumb, String osDir, F.File file) async {
+    var thumbFilePath = "$osDir${file.path}${getThumbName(file.name)}";
+    await savePhysicalImage(encryptedThumb, thumbFilePath);
   }
 
   Future<F.File> createImageFile(String path) async {

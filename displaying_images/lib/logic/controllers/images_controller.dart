@@ -9,6 +9,7 @@ import 'package:base/base.dart';
 import 'package:base/datasource/File.dart' as F;
 import 'package:displaying_images/displaying_images.dart';
 import 'package:displaying_images/logic/controllers/decrypt_to_gallery_params.dart';
+import 'package:displaying_images/logic/controllers/encrypt_to_files_params.dart';
 import 'package:displaying_images/logic/controllers/main_controller.dart';
 import 'package:displaying_images/logic/error_codes.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
@@ -35,8 +36,10 @@ class ImagesController extends GetxController {
   final CryptoManager _cryptoManager = Get.find();
 
   late final StreamSubscription<List> _decryptionIsolatesListener;
+  late final StreamSubscription<List> _encryptionIsolatesListener;
 
   final StreamController<DecryptToGalleryParams> _decryptToGalleryParams = StreamController();
+  final StreamController<EncryptToFilesParams> _encryptToFilesParams = StreamController();
 
   late final Function() showEncryptionStateDialog;
   late final Function() showSelectShareMethodeDialog;
@@ -49,18 +52,64 @@ class ImagesController extends GetxController {
     super.onInit();
     
     _listenToDeryptionIsolates();
+    _listenToEncryptIsolate();
   }
   
 
   @override
   void onClose() {
     _decryptionIsolatesListener.cancel();
+    _encryptionIsolatesListener.cancel();
     _decryptToGalleryParams.close();
+    _encryptToFilesParams.close();
     super.onClose();
+  }
+
+  _listenToEncryptIsolate() {
+    int finishedImage = 0;
+    int currentImage = 0;
+    
+    _encryptionIsolatesListener = zipTowStreams(_encryptToFilesParams.stream, _cryptoManager.readyEncryptedStream).listen((data) async {
+      var dir = await getExternalStorageDirectory();
+      EncryptToFilesParams params = data[0];
+      List<Uint8List> encryptedParts = data[1];
+      
+      print("koko f > "+encryptedParts.length.toString());
+      await _useCase.saveEncryptedImage(params.imagesFiles[currentImage], encryptedParts, dir!.path);
+
+      print("encryption done successfully and saved image[$currentImage] files");
+      // await deletePhysicalFile(imagesToEncrypt[i].imageApsolutePath);
+      // File(imagesToEncrypt[i].imageApsolutePath).deleteSync();
+      // PhotoManager.editor.deleteWithIds([imagesToEncrypt[i].id]);
+      
+      finishedImage += 1;
+      currentImage += 1;
+      print("next image > $currentImage");
+      encryptionState.value = encryptionState.value.copy(
+          loading: true,
+          error: "",
+          success: false,
+          progress: finishedImage / params.imagesFiles.length);
+
+      if (finishedImage == params.imagesFiles.length){
+        await PhotoManager.editor.deleteWithIds(params.fileIds);
+        print("encryption done successfully and deleted images files");
+
+        encryptionState.value = encryptionState.value.copy(
+            loading: false,
+            error: "",
+            success: true,
+            successMessage: "Encryption done successfully!",
+            progress: 1);
+        currentImage = 0;
+        finishedImage = 0;
+      }
+    });
   }
 
   Future encryptImages(List<EncryptImageWrapper> imagesToEncrypt) async {
     print("koko encrypt > " + imagesToEncrypt.length.toString());
+    var dir = await getExternalStorageDirectory();
 
     showEncryptionStateDialog();
     encryptionState.value = encryptionState.value.copy(
@@ -74,85 +123,73 @@ class ImagesController extends GetxController {
     var files = List<FileWrapper>.from(_controller.viewState.value.files);
     List<String> ids = [];
 
-    for (var i = 0; i < imagesToEncrypt.length; i++) {
+    List<F.File> imageFiles = [];
+
+    for (var i = 0; i < imagesToEncrypt.length; i++) {      
       var imageFile =
           await _useCase.createImageFile(_controller.currentPath.value);
       print("koko image file > " + imageFile.toString());
       imagesToEncrypt[i] = imagesToEncrypt[i].copyWith(file: imageFile);
       ids.add(imagesToEncrypt[i].id);
+      imageFiles.add(imageFile);
 
       files.add(FileWrapper(
           file: imageFile, thumbUint8list: imagesToEncrypt[i].thumbnail));
     }
+
+    EncryptToFilesParams params = EncryptToFilesParams(imagesFiles: imageFiles, fileIds: ids);
+
+    await _cryptoManager.spawnIsolates();
+    List<Future> createThumbsFiles = [];
+    for (var i = 0; i < imagesToEncrypt.length; i++) {
+      final image = await File(imagesToEncrypt[i].imageApsolutePath).readAsBytes();
+      _encryptToFilesParams.add(params);
+      Uint8List thumbnail = await _cryptoManager.encrypt(image, imagesToEncrypt[i].thumbnail, _controller.encryptionKey);
+      createThumbsFiles.add(_useCase.saveEncryptedThumb(thumbnail, dir!.path, params.imagesFiles[i]));
+    }  
+
+    await Future.wait(createThumbsFiles);
+
     _controller.viewState.value =
         _controller.viewState.value.copy(files: files);
 
     
 
-    encryptImagesIsolatePort = ReceivePort();
-    print("koko > start encrypt isolate");
+    // encryptImagesIsolatePort = ReceivePort();
+    // print("koko > start encrypt isolate");
 
-    print("koko current isolate > " + Isolate.current.debugName.toString());
-    var dir = await getExternalStorageDirectory();
-    var s = await Isolate.spawn<EncryptIsolateVars>(
-        encryptFilesIsolate,
-        EncryptIsolateVars(
-            isolateStatePort: encryptImagesIsolatePort!.sendPort,
-            images: imagesToEncrypt,
-            useCase: _useCase,
-            osDir: dir!.path,
-            path: _controller.currentPath.value,
-            key: _controller.encryptionKey));
-    // s.kill();
-    print("koko > end encrypt isolate");
-    print("koko current isolate > " + Isolate.current.debugName.toString());
+    // print("koko current isolate > " + Isolate.current.debugName.toString());
+    // var dir = await getExternalStorageDirectory();
+    // var s = await Isolate.spawn<EncryptIsolateVars>(
+    //     encryptFilesIsolate,
+    //     EncryptIsolateVars(
+    //         isolateStatePort: encryptImagesIsolatePort!.sendPort,
+    //         images: imagesToEncrypt,
+    //         useCase: _useCase,
+    //         osDir: dir!.path,
+    //         path: _controller.currentPath.value,
+    //         key: _controller.encryptionKey));
+    // // s.kill();
+    // print("koko > end encrypt isolate");
+    // print("koko current isolate > " + Isolate.current.debugName.toString());
 
-    var result = await encryptImagesIsolatePort!.first;
-    print("koko > end encrypt isolate port");
-    encryptImagesIsolatePort!.close();
-    encryptImagesIsolatePort = null;
+    // var result = await encryptImagesIsolatePort!.first;
+    // print("koko > end encrypt isolate port");
+    // encryptImagesIsolatePort!.close();
+    // encryptImagesIsolatePort = null;
 
-    if (result is DataException) {
-      encryptionState.value = encryptionState.value.copy(
-          loading: false,
-          loadingMessage: "",
-          successMessage: "",
-          error: result.code,
-          success: false,
-          progress: 1);
-      // s.kill();
-      print("error with encryption :" + result.toString());
-      // return;
-    } else {
-      List<List> encryptedResults = result as List<List>;
-      var finished = 0;
-      for (var i = 0; i < imagesToEncrypt.length; i++) {
-        await _useCase.saveEncryptedImage(imagesToEncrypt[i].file!, encryptedResults[i][0], encryptedResults[i][1], dir.path);
-      print("encryption done successfully and saved images files");
-        // await deletePhysicalFile(imagesToEncrypt[i].imageApsolutePath);
-        // File(imagesToEncrypt[i].imageApsolutePath).deleteSync();
-      // PhotoManager.editor.deleteWithIds([imagesToEncrypt[i].id]);
-        print("encryption done successfully and deleted images files");
-        finished += 1;
-        encryptionState.value = encryptionState.value.copy(
-            loading: true,
-            error: "",
-            success: false,
-            progress: finished / imagesToEncrypt.length);
-      }
-      print("encryption done successfully completed");
-      await PhotoManager.editor.deleteWithIds(ids);
-
-      encryptionState.value = encryptionState.value.copy(
-          loading: false,
-          error: "",
-          success: true,
-          successMessage: "Encryption done successfully!",
-          progress: 1);
-      s.kill();
-      // await Future.wait(deleteOriginalImageTasks.map((e) async => await e()));
-      // await Future.wait(saveEncryptedImagesTasks.map((e) => e()));
-    }
+    // if (result is DataException) {
+    //   encryptionState.value = encryptionState.value.copy(
+    //       loading: false,
+    //       loadingMessage: "",
+    //       successMessage: "",
+    //       error: result.code,
+    //       success: false,
+    //       progress: 1);
+    //   // s.kill();
+    //   print("error with encryption :" + result.toString());
+    //   // return;
+    // }
   }
 
   _listenToDeryptionIsolates() {
@@ -163,14 +200,14 @@ class ImagesController extends GetxController {
       DecryptToGalleryParams params = data[0] as DecryptToGalleryParams;
       await _useCase.decryptImagesBackToGallery(
             params.imageFiles[currentImage], image);
-        encryptionState.value = encryptionState.value.copy(
+
+      currentImage += 1;
+      finishedImages += 1;
+      encryptionState.value = encryptionState.value.copy(
             loading: true,
             error: "",
             success: false,
             progress: finishedImages / params.imageFiles.length);
-
-      currentImage += 1;
-      finishedImages += 1;
 
       print("koko finished images > "+ finishedImages.toString());
 
@@ -246,22 +283,26 @@ class ImagesController extends GetxController {
     };
 
     await _cryptoManager.spawnIsolates();
-    final vars = DecryptToGalleryParams(imageFiles: imageFiles, filesAfterDecrypting: files);
     
     for (var selected
         in _controller.selectionViewState.value.selectedFiles.keys) {
       final file  = _controller.viewState.value.files[selected].file;
-      
-      final encryptedParts = await CryptoManager.loadEncryptedParts(file.name, file.path);
-
-      _cryptoManager.decryptImageWithLimitedIsolates(encryptedParts, _controller.encryptionKey);
-      _decryptToGalleryParams.add(vars);
 
       imageFiles.add(file);
       files.remove(selected);
     }
 
+    final vars = DecryptToGalleryParams(imageFiles: imageFiles, filesAfterDecrypting: files);
 
+    for (var selected
+        in _controller.selectionViewState.value.selectedFiles.keys) {
+      final file  = _controller.viewState.value.files[selected].file;
+          
+      final encryptedParts = await CryptoManager.loadEncryptedParts(file.name, file.path);
+
+      _cryptoManager.decryptImage(encryptedParts, _controller.encryptionKey);
+      _decryptToGalleryParams.add(vars);
+    }
     // var dir = await getExternalStorageDirectory();
     // decryptToGalleryIsolatePort = ReceivePort();
     // await Isolate.spawn<DecryptToGalleryVars>(

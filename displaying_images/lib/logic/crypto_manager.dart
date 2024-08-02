@@ -9,23 +9,28 @@ import 'package:base/encrypt/encryption.dart';
 import 'package:displaying_images/logic/helper_functions.dart';
 import 'package:path_provider/path_provider.dart';
 
-void decryptPart(List vars) {
+void cryptoIsolate(List vars) {
   ReceivePort receivePort = ReceivePort();
-  SendPort sendPort = vars[0];
-  SendPort sendMyPort = vars[1];
-  Encrypt encrypt = vars[2];
+  SendPort decryptSendPort = vars[0];
+  SendPort encryptSendPort = vars[1];
+  SendPort sendMyPort = vars[2];
+  Encrypt encrypt = vars[3];
   sendMyPort.send(receivePort.sendPort);
 
   receivePort.listen((message) {
     // final SendPort replyTo = message[1];
-    print("koko process image here");
-
-    Uint8List encryptedPart = message[0];
+    Uint8List filePart = message[0];
     String key = message[1];
-
-    Uint8List decryptedPart = encrypt.decrypt(encryptedPart, key);
-
-    sendPort.send(decryptedPart);
+    bool isEncrypt = message[2];
+    
+    if (isEncrypt){
+      Uint8List encryptedPart = encrypt.encrypt(filePart, key).bytes;
+      encryptSendPort.send(encryptedPart);
+      print("koko crypto encrypted");
+    } else {
+      Uint8List decryptedPart = encrypt.decrypt(filePart, key);
+      decryptSendPort.send(decryptedPart);
+    }
   });
 }
 class CryptoManager {
@@ -36,17 +41,27 @@ class CryptoManager {
   final List<Isolate> _isolates = [];
 
   final HashMap<String, Uint8List> readyData = HashMap();
+  final HashMap<String , Uint8List> _encryptedReadyData = HashMap();
   late final StreamController<Uint8List> readyImage;
+  late final StreamController<List<Uint8List>> _readyEncryptedParts;
   late Stopwatch stopwatch;
 
-  CryptoManager({required Encrypt encrypt}) : _encrypt = encrypt, readyImage = StreamController.broadcast();
+  CryptoManager({required Encrypt encrypt}) : _encrypt = encrypt, readyImage = StreamController.broadcast(), _readyEncryptedParts = StreamController.broadcast();
 
   int getNumberOfCores() {
     return 3;
   }
 
-  List encrypt(Uint8List file, Uint8List thumbnail, String key) {
-    List<Uint8List> encryptedParts = [];
+  Future<Uint8List> encrypt(Uint8List file, Uint8List thumbnail, String key) {
+    final imageParts = splitFile(file);
+    _encryptImage(imageParts, key);
+    return Future<Uint8List>.sync(() {
+      return _encrypt.encrypt(thumbnail, key).bytes;
+    });
+  }
+
+  List<Uint8List> splitFile(Uint8List file) {
+    List<Uint8List> imageParts = [];
     final numSplits = getNumberOfCores();
     int splitSize = (file.length / numSplits).ceil();
     for (int i = 0; i < numSplits; i++) {
@@ -55,11 +70,11 @@ class CryptoManager {
       if (end > file.length) end = file.length;
 
       Uint8List part = file.sublist(start, end);
-      Uint8List encryptedPart = _encrypt.encrypt(part, key).bytes;
-      encryptedParts.add(encryptedPart);
+
+      // Uint8List encryptedPart = _encrypt.encrypt(part, key).bytes;
+      imageParts.add(part);
     }
-    Uint8List thumbnailEncrypted = _encrypt.encrypt(thumbnail, key).bytes;
-    return [encryptedParts, thumbnailEncrypted];
+    return imageParts;
   }
 
   Future spawnIsolates() async {
@@ -67,17 +82,18 @@ class CryptoManager {
     int numCores = getNumberOfCores();
 
     for (int i = 0; i < numCores; i++) {
-      ReceivePort receivePort = ReceivePort();
+      ReceivePort decryptReceivePort = ReceivePort();
+      ReceivePort encryptReceivePort = ReceivePort();
       ReceivePort getIsolateSendPort = ReceivePort();
       // receivePorts.add(receivePort);
-      Isolate isolate = await Isolate.spawn(decryptPart, [receivePort.sendPort, getIsolateSendPort.sendPort, _encrypt]);
+      Isolate isolate = await Isolate.spawn(cryptoIsolate, [decryptReceivePort.sendPort, encryptReceivePort.sendPort, getIsolateSendPort.sendPort, _encrypt]);
       _isolates.add(isolate);
       print("koko spawned isolate num > $i");
       SendPort sendPort = await getIsolateSendPort.first;
       _sendPorts.add(sendPort);
 
       print("koko received port for isolate num > $i");
-      _receivePortsSupscriptions.add(receivePort.listen((message) {
+      _receivePortsSupscriptions.add(decryptReceivePort.listen((message) {
         readyData[i.toString()] = message;
 
         if (readyData.length == numCores){
@@ -86,28 +102,56 @@ class CryptoManager {
             orderedData.add(readyData[i.toString()]!); 
           }
           readyImage.add(Uint8List.fromList(orderedData.expand((part) => part).toList()));
+          readyData.clear();
+        }
+      }));
+
+      _receivePortsSupscriptions.add(encryptReceivePort.listen((message) {
+        _encryptedReadyData[i.toString()] = message;
+
+        if (_encryptedReadyData.length == numCores){
+          List<Uint8List> orderedData = [];
+          for (int i = 0; i < _encryptedReadyData.length; i++) {
+            orderedData.add(_encryptedReadyData[i.toString()]!); 
+          }
+          _readyEncryptedParts.add(orderedData);
+          _encryptedReadyData.clear();
         }
       }));
     }
   }
 
-  decryptImageWithLimitedIsolates(List<Uint8List> encryptedParts, String key) {
+  _sendPartsToCryptoIsolate(List<Uint8List> encryptedParts, String key, bool isEncrypt) {
     stopwatch = Stopwatch()..start();
     int numSplits = encryptedParts.length;
     int numCores = getNumberOfCores();
     print("koko current send ports ${_sendPorts.length}");
     for (int i = 0; i < numSplits; i++) {
       _sendPorts[i % numCores].send([
-        encryptedParts[i], key,
+        encryptedParts[i], key, isEncrypt
       ]);
     }
+  }
+
+  decryptImage(List<Uint8List> encryptedParts, String key) {
+    _sendPartsToCryptoIsolate(encryptedParts, key, false);
 
     // for (Isolate isolate in isolates) {
     //   isolate.kill(priority: Isolate.immediate);
     // }
   }
+
+  _encryptImage(List<Uint8List> imageParts, String key) {
+    _sendPartsToCryptoIsolate(imageParts, key, true);
+  }
   
   Stream<Uint8List> get readyImageStream =>  readyImage.stream.map((s) {
+    stopwatch.stop();
+    print('Decryption completed in ${stopwatch.elapsedMilliseconds} ms');
+    return s;
+  });
+
+  Stream<List<Uint8List>> get readyEncryptedStream => _readyEncryptedParts.stream.map((s) {
     stopwatch.stop();
     print('Decryption completed in ${stopwatch.elapsedMilliseconds} ms');
     return s;
