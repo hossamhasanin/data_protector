@@ -26,6 +26,7 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 31
+    namespace "com.hossam.hasanin.data_protector.wifi_p2p"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

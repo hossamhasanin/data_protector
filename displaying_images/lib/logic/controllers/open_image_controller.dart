@@ -23,17 +23,6 @@ class OpenImageController extends GetxController {
     viewState = viewState.copy(
         thumbImageBytes: images[currentIndex].thumbUint8list, error: "", currentImageBytes: Uint8List.fromList([]));
     update([index]);
-    // var recievingPort = ReceivePort();
-    // await Isolate.spawn<DecryptToGalleryVars>(
-        // decryptImageIsolate,
-    //     DecryptToGalleryVars(
-    //         isolateStatePort: recievingPort.sendPort,
-    //         files: [images[index].file],
-    //         useCase: _useCase,
-    //         osDir: dir!.path,
-    //         key: encryptionKey));
-    // var result = await recievingPort.first;
-    // recievingPort.close();
     
     final encryptedParts = await CryptoManager.loadEncryptedParts(images[index].file.name, images[index].file.path);
     

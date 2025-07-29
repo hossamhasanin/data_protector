@@ -35,10 +35,10 @@ dependencies:
   stream_channel:
   path_provider:
   wechat_assets_picker: ^9.1.0
-  share:
-  flutter_archive: ^4.2.0
-  file_picker:
-  device_info_plus: ^3.2.3
+  # share:
+  flutter_archive: ^6.0.3
+  file_picker: ^10.2.0
+  device_info_plus: ^11.5.0
   pull_to_refresh: ^2.0.0
 
 
@@ -52,7 +52,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^1.0.0
+  flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

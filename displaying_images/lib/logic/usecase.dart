@@ -13,11 +13,10 @@ import 'package:displaying_images/logic/models/decrypt_isolate_vars.dart';
 import 'package:displaying_images/logic/error_codes.dart';
 import 'package:displaying_images/logic/image_file_wrapper.dart';
 import 'package:displaying_images/logic/models/decrypt_to_gallery_vars.dart';
-import 'package:displaying_images/logic/models/encrypt_isolate_vars.dart';
 import 'package:flutter_archive/flutter_archive.dart';
 import 'package:image/image.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share/share.dart';
+// import 'package:share/share.dart';
 import 'package:stream_channel/isolate_channel.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
@@ -104,52 +103,27 @@ fetchFilesIsolate(DecryptIsolateVars vars) async {
   }
 }
 
-Future encryptFilesIsolate(EncryptIsolateVars vars) async {
-  List<Future<List> Function()> encryptTasks = [];
+// TODO: remove to cope with the new multi isolate decryption method
 
-  print("Read image files as bytes");
-  for (var image in vars.images) {
-    var imageBytes = File(image.imageApsolutePath).readAsBytesSync();
-    encryptTasks.add(() => vars.useCase.encryptImage(
-        FileWrapper(file: image.file!, thumbUint8list: image.thumbnail),
-        imageBytes,
-        vars.key,
-        vars.osDir));
-  }
+// Future decryptImageIsolate(DecryptToGalleryVars vars) async {
+//   List<Future<Uint8List> Function()> decryptTasks = [];
 
-  try {
-    print("koko > all files are encrypting with key > "+ vars.key);
-    var result = await Future.wait(encryptTasks.map((e) => e()));
-    print("koko > all files encrypted");
-    Isolate.exit(vars.isolateStatePort, result);
-  } catch (e) {
-    print("koko error " + e.toString());
-    Isolate.exit(
-        vars.isolateStatePort,
-        DataException(e.toString(),
-            DisplayImagesErrorCodes.couldNotEncryptImages.toString()));
-  }
-}
+//   for (var image in vars.files) {
+//     decryptTasks
+//         .add(() => vars.useCase.decryptImage(image, vars.key, vars.osDir));
+//   }
 
-Future decryptImageIsolate(DecryptToGalleryVars vars) async {
-  List<Future<Uint8List> Function()> decryptTasks = [];
+//   try {
+//     var result = await Future.wait(decryptTasks.map((e) => e()));
 
-  for (var image in vars.files) {
-    decryptTasks
-        .add(() => vars.useCase.decryptImage(image, vars.key, vars.osDir));
-  }
-
-  try {
-    var result = await Future.wait(decryptTasks.map((e) => e()));
-
-    Isolate.exit(vars.isolateStatePort, result);
-  } catch (e) {
-    Isolate.exit(
-        vars.isolateStatePort,
-        DataException(e.toString(),
-            DisplayImagesErrorCodes.couldNotDecryptImages.toString()));
-  }
-}
+//     Isolate.exit(vars.isolateStatePort, result);
+//   } catch (e) {
+//     Isolate.exit(
+//         vars.isolateStatePort,
+//         DataException(e.toString(),
+//             DisplayImagesErrorCodes.couldNotDecryptImages.toString()));
+//   }
+// }
 
 Future decryptThumbIsolate(DecryptToGalleryVars vars) async {
   List<Future<FileWrapper> Function()> decryptTasks = [];
@@ -262,38 +236,6 @@ class DisplayingImagesUseCase {
     var decryptedImage = _encrypt.decrypt(encImageFile, key);
     return decryptedImage;
   }
-
-  // Future<List<Uint8List>> encryptImage(FileWrapper imageWrapper,
-  //     Uint8List image, String key, String osDir) async {
-  //   // var imagePath = "$osDir${imageWrapper.file.path}${imageWrapper.file.name}";
-  //   // var thumbFilePath =
-  //   //     "$osDir${imageWrapper.file.path}${getThumbName(imageWrapper.file.name)}";
-  //   // print("koko image path >" + imagePath);
-  //   // print("koko thumb image path >" + thumbFilePath);
-
-  //   // var encryptedImage = _encrypt.encrypt(image, key);
-  //   // var encryptedThumb = _encrypt.encrypt(imageWrapper.thumbUint8list!, key);
-  //   // print("koko image encryption finished");
-  //   // return [encryptedImage.bytes, encryptedThumb.bytes];
-  // }
-
-  Future<List> encryptImage(FileWrapper imageWrapper,
-      Uint8List image, String key, String osDir) async {
-    // var imagePath = "$osDir${imageWrapper.file.path}${imageWrapper.file.name}";
-    // var thumbFilePath =
-    //     "$osDir${imageWrapper.file.path}${getThumbName(imageWrapper.file.name)}";
-    // print("koko image path >" + imagePath);
-    // print("koko thumb image path >" + thumbFilePath);
-
-    // var encryptedImage = _encrypt.encrypt(image, key);
-    // var encryptedThumb = _encrypt.encrypt(imageWrapper.thumbUint8list!, key);
-    // print("koko image encryption finished");
-    // return [encryptedImage.bytes, encryptedThumb.bytes];
-
-    CryptoManager cryptoManager = CryptoManager(encrypt: _encrypt);
-    return cryptoManager.encrypt(image, imageWrapper.thumbUint8list!, key); 
-  }
-
   Future saveEncryptedImage(F.File file, List<Uint8List> encryptedImageParts, String osDir) async {
     var i = 0;
     for (var part in encryptedImageParts) {
@@ -415,7 +357,7 @@ class DisplayingImagesUseCase {
           files: files,
           zipFile: zipFile);
       // share the zip file
-      await Share.shareFiles([zipFile.path]);
+      // await Share.shareFiles([zipFile.path]);
     } catch (e) {
       print("koko share encrypted images error > " + e.toString());
       return DataException(
@@ -491,6 +433,7 @@ class DisplayingImagesUseCase {
 
       var files = await Future.wait(filesDecryptingTask.map((e) => e()));
       var port = ReceivePort();
+      // TODO: Remove this way of decryption and replace it with the new multi isolate method
       await Isolate.spawn<DecryptToGalleryVars>(
           decryptThumbIsolate,
           DecryptToGalleryVars(
